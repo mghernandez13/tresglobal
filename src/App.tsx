@@ -1,5 +1,7 @@
+import AdminTemplate from "./templates/AdminTemplate";
+
 function App() {
-  return <></>;
+  return <AdminTemplate></AdminTemplate>;
 }
 
 export default App;

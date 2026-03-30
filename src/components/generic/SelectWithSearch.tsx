@@ -1,0 +1,120 @@
+import { useState } from "react";
+import {
+  Combobox,
+  ComboboxButton,
+  ComboboxInput,
+  ComboboxOption,
+  ComboboxOptions,
+  Transition,
+} from "@headlessui/react";
+import { ChevronUpDownIcon } from "@heroicons/react/20/solid";
+import type { SearchableSelectOption } from "../../types/generic";
+
+interface SearchableSelectProps {
+  data?: SearchableSelectOption[];
+  name?: string;
+  isHirarchical?: boolean;
+  preSelectedOption?: SearchableSelectOption | null;
+  handleFormChange: (e: SearchableSelectOption) => void;
+}
+
+export default function SearchableSelect(props: SearchableSelectProps) {
+  const { data, name, isHirarchical, preSelectedOption, handleFormChange } =
+    props;
+  const [selected, setSelected] = useState<SearchableSelectOption | null>(
+    preSelectedOption ?? null,
+  );
+  const [query, setQuery] = useState("");
+  const filteredPeople =
+    query === ""
+      ? data
+      : data?.filter((item) =>
+          item?.label?.toLowerCase().includes(query.toLowerCase()),
+        );
+
+  return (
+    <div className="w-">
+      <Combobox
+        name={name}
+        value={selected}
+        onChange={(option) => {
+          setSelected(option);
+          if (option) handleFormChange(option);
+        }}
+      >
+        <div className="relative mt-1">
+          <div
+            className={`relative w-full cursor-default overflow-hidden rounded-lg bg-[#16191d] p-1 text-left border transition-all duration-200 ${
+              query !== "" || selected ? "border-gray-700" : "border-gray-700"
+            } focus-within:border-yellow-500 focus-within:ring-1 focus-within:ring-yellow-500`}
+          >
+            <ComboboxInput
+              className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-white bg-transparent focus:ring-0 outline-none"
+              displayValue={(item: SearchableSelectOption) => item?.label}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+
+            <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2">
+              <ChevronUpDownIcon
+                className="h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+            </ComboboxButton>
+          </div>
+
+          <Transition
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+            afterLeave={() => setQuery("")}
+          >
+            <ComboboxOptions className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#16191d] py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-50">
+              {filteredPeople?.length === 0 && query !== "" ? (
+                <div className="relative cursor-default select-none py-2 px-4 text-gray-400">
+                  Nothing found.
+                </div>
+              ) : (
+                filteredPeople?.map((person) => (
+                  <ComboboxOption
+                    key={person.id}
+                    value={person}
+                    className={({ active }) =>
+                      `relative cursor-default select-none py-2 pr-4 transition-all ${
+                        active
+                          ? "bg-yellow-600/20 text-yellow-500"
+                          : "text-gray-300"
+                      } ${person.level === 0 ? "bg-gray-800/80 border-b border-gray-700" : ""}`
+                    }
+                    style={{ paddingLeft: `${(person.level + 1) * 1}rem` }} // Dynamic indent
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* Level indicators */}
+                      {person.level === 1 && (
+                        <span className="text-gray-600">├</span>
+                      )}
+                      {person.level === 2 && (
+                        <span className="text-gray-600 ml-2">└</span>
+                      )}
+
+                      <span
+                        className={`${person.level === 0 ? "font-bold text-yellow-500" : "font-normal"}`}
+                      >
+                        {person.label}
+                      </span>
+
+                      {person.level === 0 && isHirarchical && (
+                        <span className="text-[10px] bg-yellow-500/10 px-1 rounded text-yellow-500">
+                          ROOT
+                        </span>
+                      )}
+                    </div>
+                  </ComboboxOption>
+                ))
+              )}
+            </ComboboxOptions>
+          </Transition>
+        </div>
+      </Combobox>
+    </div>
+  );
+}

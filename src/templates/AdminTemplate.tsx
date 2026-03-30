@@ -4,19 +4,14 @@ import type { PropsWithChildren } from "react";
 import { useEffect, useState } from "react";
 import { UserAuth } from "../components/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import LoadingPage from "../components/LoadingPage";
+import LoadingScreen from "../components/LoadingScreen";
 
 const AdminTemplate: React.FC<PropsWithChildren> = ({ children }) => {
   const { session, loadingPage } = UserAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(loadingPage);
 
-  // console.log("session");
-  // console.log(session);
-
   useEffect(() => {
-    console.log("session");
-    console.log(session);
     if (!loadingPage && !session) {
       navigate("/login");
     } else {
@@ -25,14 +20,14 @@ const AdminTemplate: React.FC<PropsWithChildren> = ({ children }) => {
   }, [loadingPage, navigate, session]);
 
   return loading ? (
-    <LoadingPage />
+    <LoadingScreen />
   ) : (
-    <div className="flex w-full">
-      <div className="flex-col w-full">
+    <div className="flex w-full h-auto">
+      <div className="flex-col w-full h-auto">
         <Header />
-        <section className="flex w-full">
-          <Sidebar className="flex max-w-64 w-1/5" />
-          <div className="flex w-4/5 mt-10">{children}</div>
+        <section className="flex w-full min-h-screen h-auto">
+          <Sidebar className="flex max-w-64 w-1/5 h-auto" />
+          <div className="flex w-4/5 sm:mt-4">{children}</div>
         </section>
       </div>
     </div>

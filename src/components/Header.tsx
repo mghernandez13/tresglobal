@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { UserAuth } from "./context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PrimaryLogo from "./logo/PrimaryLogo";
+import { User } from "lucide-react";
 
 const Header: React.FC = () => {
   const { setLoadingPage, signOut } = UserAuth();
@@ -9,6 +10,7 @@ const Header: React.FC = () => {
   const [toggleUserMenu, setToggleUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const userMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { session } = UserAuth();
 
   const handleToggleUserMenu = useCallback(() => {
     setToggleUserMenu(!toggleUserMenu);
@@ -33,6 +35,11 @@ const Header: React.FC = () => {
     },
     [toggleUserMenu],
   );
+
+  useEffect(() => {
+    console.log("Session in Header:", session);
+  }, [session]);
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutsideUserMenu);
 
@@ -95,7 +102,7 @@ const Header: React.FC = () => {
                 <PrimaryLogo />
               </a>
             </div>
-            <form action="#" method="GET" className="hidden lg:block lg:pl-2">
+            {/* <form action="#" method="GET" className="hidden lg:block lg:pl-2">
               <label for="topbar-search" className="sr-only">
                 Search
               </label>
@@ -126,7 +133,7 @@ const Header: React.FC = () => {
                   placeholder="Search"
                 />
               </div>
-            </form>
+            </form> */}
           </div>
           <div className="flex items-center lg:order-2">
             {/* <button
@@ -610,11 +617,18 @@ const Header: React.FC = () => {
               data-dropdown-toggle="dropdown"
             >
               <span className="sr-only">Open user menu</span>
-              <img
-                className="w-8 h-8 rounded-full"
-                src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                alt="user photo"
-              />
+              {session?.user.user_metadata.avatar_url &&
+              session?.user.user_metadata.avatar_url !== "null" ? (
+                <img
+                  className="w-8 h-8 rounded-full"
+                  src={session?.user.user_metadata.avatar_url}
+                  alt="user photo"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-500">
+                  <User className="text-gray-400 w-6 h-6" />
+                </div>
+              )}
             </button>
             {toggleUserMenu && (
               <div
@@ -624,10 +638,10 @@ const Header: React.FC = () => {
               >
                 <div className="py-3 px-4">
                   <span className="block text-sm font-semibold text-gray-900 dark:text-white">
-                    Neil sims
+                    {session?.user.user_metadata.full_name}
                   </span>
                   <span className="block text-sm text-gray-500 truncate dark:text-gray-400">
-                    name@flowbite.com
+                    {session?.user.email}
                   </span>
                 </div>
                 <ul
@@ -636,7 +650,7 @@ const Header: React.FC = () => {
                 >
                   <li>
                     <a
-                      href="#"
+                      href="/profile"
                       className="block py-2 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-white"
                     >
                       My profile

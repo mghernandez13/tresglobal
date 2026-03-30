@@ -17,30 +17,67 @@ export const AuthContextProvider = ({ children }: PropsWithChildren) => {
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
 
   useEffect(() => {
+    const checkSessionExpiry = async (session: Session | null) => {
+      if (!session) return false;
+      if (!session.expires_at) return false;
+
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at <= now) {
+        await supabase.auth.signOut();
+        Swal.fire({
+          icon: "error",
+          title: "Session expired",
+          text: "Your session has expired, please log in again.",
+        });
+        setSession(null);
+        return true;
+      }
+
+      return false;
+    };
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
+      const expired = await checkSessionExpiry(session);
+      if (!expired) {
+        setSession(session);
+      }
 
       setLoadingPage(false);
     });
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      // if (event === "SIGNED_OUT") {
-      //   Swal.fire({
-      //     icon: "error",
-      //     title: "Session expired",
-      //     text: `Session has expired, please relogin`,
-      //   });
-      //   setSession(null);
-      // }
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "TOKEN_REFRESHED" && !session) {
+        await checkSessionExpiry(session);
+      }
 
-      setSession(session);
+      const userStatus = Boolean(session?.user?.user_metadata.status);
+      const userPermissions = session?.user?.user_metadata.permissions;
+      if (!userPermissions?.includes("Can Login to Admin") || !userStatus) {
+        setSession(null);
+      } else if (session) {
+        const expired = await checkSessionExpiry(session);
+        if (!expired) setSession(session);
+      }
 
       setLoadingPage(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Log out",
+        text: `Error occurred while trying to log out: ${error}`,
+      });
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -53,27 +90,20 @@ export const AuthContextProvider = ({ children }: PropsWithChildren) => {
         throw error.message;
       }
 
-      const userRole = data.user?.app_metadata.role;
-      if (userRole !== "admin") {
+      const userStatus = Boolean(data.user?.user_metadata.status);
+      const userPermissions = data?.user?.user_metadata.permissions;
+
+      if (!userPermissions?.includes("Can Login to Admin") || !userStatus) {
         setSession(null);
+        signOut();
+
         return { success: false, error: "You have no access to this portal" };
       }
 
       return { success: true, data };
     } catch (error) {
+      setSession(null);
       return { success: false, error };
-    }
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Log out",
-        text: `Error occurred while trying to log out: ${error}`,
-      });
     }
   };
 

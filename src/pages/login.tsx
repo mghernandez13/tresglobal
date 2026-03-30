@@ -4,6 +4,7 @@ import { UserAuth } from "../components/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/generic/icons/Loading";
 import NotificationAlert from "../components/NotificationAlert";
+import { Eye, EyeOff } from "lucide-react";
 
 type LoginForm = {
   email: string;
@@ -20,6 +21,7 @@ const Login: React.FC = () => {
     error: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { session, signIn } = UserAuth();
@@ -82,10 +84,7 @@ const Login: React.FC = () => {
             )}
             <form className="space-y-4 md:space-y-6" onSubmit={handleSignIn}>
               <div>
-                <label
-                  for="email"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                   Your email
                 </label>
                 <input
@@ -98,28 +97,38 @@ const Login: React.FC = () => {
                     setLoginForm({ ...loginForm, email: e.target.value })
                   }
                   value={loginForm.email}
-                  required=""
+                  required
                 />
               </div>
               <div>
-                <label
-                  for="password"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                   Password
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="••••••••"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setLoginForm({ ...loginForm, password: e.target.value })
-                  }
-                  value={loginForm.password}
-                  required=""
-                />
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    id="password"
+                    placeholder="••••••••"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginForm({ ...loginForm, password: e.target.value })
+                    }
+                    value={loginForm.password}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 bg-transparent border-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-start">
@@ -129,14 +138,10 @@ const Login: React.FC = () => {
                       aria-describedby="remember"
                       type="checkbox"
                       className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                      required=""
                     />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label
-                      for="remember"
-                      className="text-gray-500 dark:text-gray-300"
-                    >
+                    <label className="text-gray-500 dark:text-gray-300">
                       Remember me
                     </label>
                   </div>

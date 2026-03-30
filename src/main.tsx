@@ -4,11 +4,14 @@ import "./index.css";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes.tsx";
 import { AuthContextProvider } from "./components/context/AuthContext";
+import ApolloWrapper from "./graphql/client.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthContextProvider>
-      <RouterProvider router={router} />
+      <ApolloWrapper>
+        <RouterProvider router={router} />
+      </ApolloWrapper>
     </AuthContextProvider>
   </StrictMode>,
 );
