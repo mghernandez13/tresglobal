@@ -75,6 +75,26 @@ const ViewBetPrizeModal: React.FC<ViewBetPrizeModalProps> = ({
           </div>
           <div className="flex w-full gap-5">
             <div className="flex flex-col gap-2 w-full md:w-1/2">
+              <Label>Super Jackpot Enabled</Label>
+              <Input
+                type="text"
+                disabled={true}
+                value={prize.super_jackpot ? "Yes" : "No"}
+                placeholder="Super Jackpot Enabled"
+              />
+            </div>
+            <div className="flex flex-col gap-2 w-full md:w-1/2">
+              <Label>Super Jackpot Multiplier</Label>
+              <Input
+                type="text"
+                disabled={true}
+                value={prize.super_jackpot_multiplier ?? 0}
+                placeholder="Super Jackpot Multiplier"
+              />
+            </div>
+          </div>
+          <div className="flex w-full gap-5">
+            <div className="flex flex-col gap-2 w-full md:w-1/2">
               <Label>Prize</Label>
               <Input
                 type="text"

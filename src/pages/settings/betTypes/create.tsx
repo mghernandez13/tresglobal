@@ -8,8 +8,11 @@ import { CREATE_BET_TYPE } from "../../../graphql/queries/betTypes";
 import Swal from "sweetalert2";
 import BetTypeForm from "../../../components/forms/BetTypeForm";
 import type { BetTypeFormData } from "../../../components/forms/BetTypeForm";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const CreateBetTypePage: React.FC = () => {
+  useCheckUserPermissions("Add Bet Types");
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<BetTypeFormData>({

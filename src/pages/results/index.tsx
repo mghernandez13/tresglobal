@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client/react";
 import DataTable from "../../components/generic/table";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GET_RESULTS } from "../../graphql/queries/results";
 import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
@@ -16,6 +16,7 @@ import { ChevronDown, ChevronsUpDown, ChevronUp, Eye } from "lucide-react";
 import Headline from "../../components/generic/Headline";
 
 const ResultsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("search") || "";
@@ -79,23 +80,24 @@ const ResultsPage: React.FC = () => {
     fetchPolicy: "network-only",
   });
 
+  // Use master data for static filter counts (imitate agents/bets table)
   const drawTypeFilterData = useMemo(() => {
     return (
       lottoTypesData?.lotto_typesCollection?.edges.map(({ node }) => ({
         name: node.name,
-        count: (data?.draw_resultsCollection?.edges || []).filter(
-          (result) =>
-            result?.node && String(result.node.draw_type) === String(node.id),
-        ).length,
         value: String(node.id),
+        count: node?.draw_resultsCollection?.totalCount ?? 0,
       })) || []
     );
-  }, [lottoTypesData, data]);
+  }, [lottoTypesData]);
 
   const tableFilter = {
-    selectedFilter: selectedDrawTypeFilter,
-    setSelectedFilter: setSelectedDrawTypeFilter,
-    data: drawTypeFilterData,
+    drawType: {
+      label: "Draw Type",
+      selectedFilter: selectedDrawTypeFilter,
+      setSelectedFilter: setSelectedDrawTypeFilter,
+      data: drawTypeFilterData,
+    },
   };
 
   const handleSort = useCallback(
@@ -112,14 +114,13 @@ const ResultsPage: React.FC = () => {
     [sortConfig.column, sortConfig.direction],
   );
 
-  const handleViewResult = useCallback(
-    (
-      result: ResultsQueryData["draw_resultsCollection"]["edges"][number]["node"],
-    ) => {
-      setSelectedResult(result);
-      setViewModalOpen(true);
+  const handleViewDetails = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, resultId: number) => {
+      e.preventDefault();
+      // Your logic to handle viewing details
+      navigate(`/results/details/${resultId}`);
     },
-    [],
+    [navigate],
   );
 
   const columns = useMemo(() => {
@@ -184,16 +185,16 @@ const ResultsPage: React.FC = () => {
         action: (
           <td className="flex gap-2 px-4 py-3 items-center justify-end">
             <div className="relative flex flex-col items-center group">
-              <button
+              <a
+                href="#"
+                onClick={(e) => handleViewDetails(e, node.id)}
                 className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
-                type="button"
-                onClick={() => node && handleViewResult(node)}
               >
                 <Eye className="w-5 h-5" />
-              </button>
+              </a>
               <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                 <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
-                  View
+                  View Summary
                 </span>
                 <div className="w-3 h-3 -mt-2 rotate-45 bg-gray-900"></div>
               </div>
@@ -202,7 +203,7 @@ const ResultsPage: React.FC = () => {
         ),
       };
     });
-  }, [data, handleViewResult, lottoTypeMap]);
+  }, [data?.draw_resultsCollection?.edges, handleViewDetails, lottoTypeMap]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -215,7 +216,13 @@ const ResultsPage: React.FC = () => {
     <AdminTemplate>
       <div className="w-full px-4  sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center justify-between mb-8">
-          <Headline>Bet Prizes</Headline>
+          <Headline>Draw Results</Headline>
+          <button
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 rounded-lg shadow"
+            onClick={() => navigate("/results/create")}
+          >
+            Create Result
+          </button>
         </div>
         <DataTable
           loading={loading}

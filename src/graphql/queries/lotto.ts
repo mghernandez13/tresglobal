@@ -24,6 +24,13 @@ export const GET_LOTTO_TYPES = gql`
           number_of_digits
           min_number
           max_number
+          logo_image
+          betsCollection {
+            totalCount
+          }
+          draw_resultsCollection {
+            totalCount
+          }
         }
         cursor
       }
@@ -50,6 +57,7 @@ export const GET_LOTTO_TYPE = gql`
           number_of_digits
           min_number
           max_number
+          logo_image
         }
       }
     }
@@ -67,6 +75,7 @@ export const UPDATE_LOTTO_TYPE = gql`
     $numberOfDigits: Int
     $minNumber: Int
     $maxNumber: Int
+    $logoImage: String
     $isArchive: Boolean
   ) {
     updatelotto_typesCollection(
@@ -79,6 +88,7 @@ export const UPDATE_LOTTO_TYPE = gql`
         number_of_digits: $numberOfDigits
         min_number: $minNumber
         max_number: $maxNumber
+        logo_image: $logoImage
         is_archive: $isArchive
       }
       filter: { id: { eq: $id } }

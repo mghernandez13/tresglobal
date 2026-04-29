@@ -21,6 +21,10 @@ import ResultsPage from "./pages/results";
 import CreateResultPage from "./pages/results/create";
 import ConfigurationSettingsPage from "./pages/settings/configuration";
 import MyProfilePage from "./pages/profile";
+import BetsPage from "./pages/bets";
+import DummyBetsPage from "./pages/dummybets";
+import ResultsDetailsPage from "./pages/results/details";
+import QrScannerPage from "./pages/qrscanner";
 
 export const router = createBrowserRouter([
   { path: "/", element: <App /> },
@@ -104,5 +108,17 @@ export const router = createBrowserRouter([
   {
     path: "/profile",
     element: <MyProfilePage />,
+  },
+  {
+    path: "/bets",
+    element: <BetsPage />,
+  },
+  {
+    path: "/dummy-bets",
+    element: <DummyBetsPage />,
+  },
+  {
+    path: "/results/details/:resultId",
+    element: <ResultsDetailsPage />,
   },
 ]);

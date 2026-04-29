@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import type { TableHeaderProps } from "../../../types/generic";
-import { useLocation, useNavigate } from "react-router-dom";
+import DateFilterDropdown from "./DateFilterDropdown";
+import { Clock3 } from "lucide-react";
 
 const TableHeader: React.FC<TableHeaderProps> = (props) => {
   const {
-    tableName,
     tableFilter,
     searchParams,
     setSearchParams,
@@ -14,16 +15,35 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
   } = props;
   const searchQuery = searchParams.get("search") || "";
   const [inputValue, setInputValue] = useState(searchQuery);
-  const [showFilter, setShowFilter] = useState(false);
+  // Track which filter dropdown is open (by label)
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const filterMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [searchChange, setSearchChange] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const toggleShowFilter = useCallback(() => {
-    setShowFilter(!showFilter);
-  }, [showFilter]);
+  // Open/close a specific filter dropdown
+  const toggleShowFilter = useCallback((label: string) => {
+    setOpenFilter((prev) => {
+      if (prev === label) {
+        setDropdownPosition(null);
+        return null;
+      }
+      // Calculate position for portal dropdown
+      const btn = document.getElementById(`filterDropdownButton-${label}`);
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+        });
+      }
+      return label;
+    });
+  }, []);
 
   const handleClickFilterMenu = useCallback(
     (event: MouseEvent | globalThis.MouseEvent) => {
@@ -33,10 +53,10 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
         filterMenuButtonRef.current &&
         !filterMenuButtonRef.current.contains(event.target as Node)
       ) {
-        toggleShowFilter();
+        setOpenFilter(null);
       }
     },
-    [toggleShowFilter],
+    [],
   );
 
   const handleCheckboxChange = (role: string) => {
@@ -125,95 +145,117 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
         </div>
       </div>
       <div className="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
-        <button
-          onClick={() => navigate(`/${location.pathname}/create`)}
-          type="button"
-          className="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-yellow-500 dark:text-black dark:hover:bg-yellow-600 focus:outline-none dark:focus:ring-primary-800"
-        >
-          <svg
-            className="h-3.5 w-3.5 mr-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              clip-rule="evenodd"
-              fill-rule="evenodd"
-              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-            />
-          </svg>
-          Create {tableName}
-        </button>
+        {/* Create button removed as requested */}
         <div className="flex items-center space-x-3 w-full md:w-auto">
           {tableFilter && (
-            <button
-              id="filterDropdownButton"
-              data-dropdown-toggle="filterDropdown"
-              onClick={toggleShowFilter}
-              ref={filterMenuButtonRef}
-              className="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-              type="button"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                className="h-4 w-4 mr-2 text-gray-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              Filter
-              <svg
-                className="-mr-1 ml-1.5 w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  clip-rule="evenodd"
-                  fill-rule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-            </button>
-          )}
-          {showFilter && (
-            <div
-              ref={filterMenuRef}
-              id="filterDropdown"
-              className="z-10 mt-1 absolute top-14 right-0 w-48 p-3 bg-white rounded-lg shadow dark:bg-gray-700"
-            >
-              <h6 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                Choose Filter
-              </h6>
-              <ul
-                className="space-y-2 text-sm"
-                aria-labelledby="filterDropdownButton"
-              >
-                {tableFilter?.data.map((item) => (
-                  <li className="flex items-center">
-                    <input
-                      id={item.value}
-                      type="checkbox"
-                      value={item.value}
-                      checked={tableFilter.selectedFilter.includes(item.value)}
-                      className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                      onChange={() => handleCheckboxChange(item.value)}
-                    />
-                    <label className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {item.name} ({item.count})
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <>
+              {Object.values(tableFilter).map((filter) => (
+                <div key={filter.label} className="relative">
+                  <button
+                    id={`filterDropdownButton-${filter.label}`}
+                    data-dropdown-toggle={`filterDropdown-${filter.label}`}
+                    onClick={() => toggleShowFilter(filter.label)}
+                    ref={filterMenuButtonRef}
+                    className={`w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 ${openFilter === filter.label ? "ring-2 ring-primary-500" : ""}`}
+                    type="button"
+                  >
+                    {filter.label === "Date Filter" ? (
+                      <Clock3 className="h-5 w-5 mr-2 text-gray-400" />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        className="h-4 w-4 mr-2 text-gray-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    {filter.label}
+
+                    <svg
+                      className="-mr-1 ml-1.5 w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        clipRule="evenodd"
+                        fillRule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      />
+                    </svg>
+                  </button>
+                  {openFilter === filter.label &&
+                    dropdownPosition &&
+                    ReactDOM.createPortal(
+                      <div
+                        ref={filterMenuRef}
+                        id={`filterDropdown-${filter.label}`}
+                        style={{
+                          position: "absolute",
+                          top: dropdownPosition.top,
+                          left: dropdownPosition.left,
+                          zIndex: 9999,
+                          width: "16rem",
+                          minWidth: "12rem",
+                          maxWidth: "90vw",
+                        }}
+                        className="p-3 bg-white rounded-lg shadow dark:bg-gray-700"
+                      >
+                        <h6 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                          Choose {filter.label}
+                        </h6>
+                        <ul
+                          className="space-y-2 text-sm"
+                          aria-labelledby={`filterDropdownButton-${filter.label}`}
+                        >
+                          {filter.label === "Date Filter" ? (
+                            <DateFilterDropdown
+                              filter={filter}
+                              setOpenFilter={setOpenFilter}
+                            />
+                          ) : (
+                            filter.data.map((item) => (
+                              <li
+                                className="flex items-center"
+                                key={item.value}
+                              >
+                                <input
+                                  id={item.value}
+                                  type="checkbox"
+                                  value={item.value}
+                                  checked={filter.selectedFilter.includes(
+                                    item.value,
+                                  )}
+                                  className="w-4 h-4 accent-yellow-500 bg-[#16191d] border-gray-600 rounded cursor-pointer"
+                                  onChange={() =>
+                                    filter.setSelectedFilter((prev) =>
+                                      prev.includes(item.value)
+                                        ? prev.filter((v) => v !== item.value)
+                                        : [...prev, item.value],
+                                    )
+                                  }
+                                />
+                                <label className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {item.name} ({item.count})
+                                </label>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </div>,
+                      document.body,
+                    )}
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>

@@ -18,7 +18,30 @@ export const GET_RESULTS = gql`
         node {
           id
           draw_date
-          draw_type
+          lotto_types {
+            id
+            name
+            game_type
+            max_number
+            min_number
+            number_of_digits
+            logo_image
+            betsCollection {
+              edges {
+                node {
+                  id
+                  hit
+                  is_super_jackpot
+                  bet_types {
+                    id
+                    name
+                    code
+                  }
+                }
+              }
+              totalCount
+            }
+          }
           combination
           created_at
         }
@@ -60,8 +83,8 @@ export const CREATE_RESULT = gql`
 export const UPDATE_RESULT = gql`
   mutation UpdateResult(
     $id: Int!
-    $draw_date: Date!
-    $draw_type: Int!
+    $draw_date: Date
+    $draw_type: Int
     $combination: String!
   ) {
     updatedraw_resultsCollection(

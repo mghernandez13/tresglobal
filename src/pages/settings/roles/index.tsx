@@ -4,7 +4,7 @@ import DataTable from "../../../components/generic/table";
 import { useQuery } from "@apollo/client/react";
 import { GET_ROLES } from "../../../graphql/queries/roles";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCallback, useMemo, useState } from "react";
+import { use, useCallback, useMemo, useState } from "react";
 import {
   ChevronsUpDown,
   ChevronUp,
@@ -21,8 +21,12 @@ import type { RolesQueryData, RolesQueryVariables } from "../../../types/api";
 import { ADMIN_PERMISSIONS, USER_PERMISSIONS } from "../../../types/constants";
 import ViewRoleModal from "./ViewRoleModal";
 import PermissionDot from "./dots";
+import PrimaryButton from "../../../components/generic/buttons/Primary";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const RolesPage: React.FC = () => {
+  useCheckUserPermissions("View Roles");
+
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<{
     name: string;
@@ -294,6 +298,9 @@ const RolesPage: React.FC = () => {
       <div className="w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center justify-between mb-8">
           <Headline>Roles</Headline>
+          <PrimaryButton onClick={() => navigate("./create")}>
+            Create Role
+          </PrimaryButton>
         </div>
 
         <DataTable

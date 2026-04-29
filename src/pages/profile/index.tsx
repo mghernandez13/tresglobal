@@ -113,7 +113,7 @@ const MyProfilePage: React.FC = () => {
       Swal.fire({
         icon: "success",
         title: "Profile Updated",
-        text: "Your profile was updated successfully.",
+        text: "Your profile was updated successfully. You must relogin to see the changes.",
       });
     } catch (error) {
       Swal.fire({ icon: "error", title: "Update Failed", text: String(error) });

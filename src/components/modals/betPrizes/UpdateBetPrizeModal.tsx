@@ -8,7 +8,13 @@ interface UpdateBetPrizeModalProps {
   open: boolean;
   onClose: () => void;
   prize: BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"] | null;
-  onUpdate: (fields: { bet_amount: number; prize: number; is_active: boolean }) => void;
+  onUpdate: (fields: {
+    bet_amount: number;
+    prize: number;
+    is_active: boolean;
+    super_jackpot?: boolean;
+    super_jackpot_multiplier?: number | "";
+  }) => void;
 }
 
 const UpdateBetPrizeModal: React.FC<UpdateBetPrizeModalProps> = ({
@@ -20,12 +26,20 @@ const UpdateBetPrizeModal: React.FC<UpdateBetPrizeModalProps> = ({
   const [betAmount, setBetAmount] = useState(prize?.bet_amount ?? 0);
   const [prizeValue, setPrizeValue] = useState(prize?.prize ?? 0);
   const [isActive, setIsActive] = useState(prize?.is_active ?? true);
+  const [superJackpot, setSuperJackpot] = useState(
+    prize?.super_jackpot ?? false,
+  );
+  const [superJackpotMultiplier, setSuperJackpotMultiplier] = useState(
+    prize?.super_jackpot_multiplier ?? "",
+  );
 
   useEffect(() => {
     if (open && prize) {
       setBetAmount(prize.bet_amount);
       setPrizeValue(prize.prize);
       setIsActive(prize.is_active);
+      setSuperJackpot(prize.super_jackpot ?? false);
+      setSuperJackpotMultiplier(prize.super_jackpot_multiplier ?? "");
     }
   }, [open, prize]);
 
@@ -33,7 +47,15 @@ const UpdateBetPrizeModal: React.FC<UpdateBetPrizeModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate({ bet_amount: betAmount, prize: prizeValue, is_active: isActive });
+    onUpdate({
+      bet_amount: betAmount,
+      prize: prizeValue,
+      is_active: isActive,
+      super_jackpot: superJackpot,
+      super_jackpot_multiplier: superJackpot
+        ? Number(superJackpotMultiplier)
+        : "",
+    });
     onClose();
   };
 
@@ -78,12 +100,60 @@ const UpdateBetPrizeModal: React.FC<UpdateBetPrizeModalProps> = ({
               />
             </div>
           </div>
+          <div className="flex w-full gap-4">
+            <div className="flex items-center gap-2 mt-2 w-full md:w-1/2 pt-6">
+              <input
+                type="checkbox"
+                checked={!!superJackpot}
+                onChange={(e) => setSuperJackpot(e.target.checked)}
+                className="w-5 h-5 accent-blue-500 bg-[#16191d] border-gray-600 rounded cursor-pointer"
+              />
+              <label className="text-gray-300 font-medium cursor-pointer">
+                Enable Super Jackpot
+              </label>
+            </div>
+            {superJackpot && (
+              <div className="flex flex-col gap-2 w-full md:w-1/2 mt-2">
+                <Label>Super Jackpot Multiplier</Label>
+                <Input
+                  name="super_jackpot_multiplier"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={superJackpotMultiplier}
+                  onChange={(e) => {
+                    // Prevent e, +, - and multiple dots
+                    const val = e.target.value;
+                    if (
+                      /^(?![eE\+\-])\d*(\.\d{0,2})?$/.test(val) ||
+                      val === ""
+                    ) {
+                      setSuperJackpotMultiplier(val);
+                    }
+                  }}
+                  required={!!superJackpot}
+                  pattern="^\\d+(\\.\\d{1,2})?$"
+                  placeholder="0.00"
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (
+                      ["e", "E", "+", "-"].includes(e.key) ||
+                      (e.key === "." &&
+                        (superJackpotMultiplier.includes(".") ||
+                          e.currentTarget.selectionStart === 0))
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Active</Label>
             <input
               type="checkbox"
               checked={isActive}
-              onChange={e => setIsActive(e.target.checked)}
+              onChange={(e) => setIsActive(e.target.checked)}
               className="w-5 h-5 accent-yellow-500"
             />
           </div>

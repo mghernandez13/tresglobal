@@ -3,11 +3,16 @@ import Label from "../generic/Label";
 import Input from "../generic/Input";
 import SearchableSelect from "../generic/SelectWithSearch";
 import { formatTo12h } from "../../utils/helper";
+import PrimaryButton from "../generic/buttons/Primary";
+import SecondaryButton from "../generic/buttons/Secondary";
+
 export interface BetPrizeFormData {
   lottoTypeId: string;
   betAmount: string;
   prize: string;
   isActive: boolean;
+  super_jackpot?: boolean;
+  super_jackpot_multiplier?: string;
 }
 
 export interface LottoTypeOption {
@@ -120,6 +125,46 @@ const BetPrizeForm: React.FC<BetPrizeFormProps> = ({
           </div>
         </div>
 
+        <div className="flex w-full gap-4">
+          <div className="flex items-center gap-2 mt-2 w-full md:w-1/2">
+            <input
+              type="checkbox"
+              name="super_jackpot"
+              checked={!!formData.super_jackpot}
+              onChange={onChange}
+              className="w-5 h-5 accent-yellow-500 bg-[#16191d] border-gray-600 rounded cursor-pointer"
+            />
+            <label className="text-gray-300 font-medium cursor-pointer">
+              Enable Super Jackpot
+            </label>
+          </div>
+          {formData.super_jackpot && (
+            <div className="flex flex-col gap-2 w-full md:w-1/2 mt-2">
+              <Label>Super Jackpot Multiplier</Label>
+              <Input
+                name="super_jackpot_multiplier"
+                type="number"
+                step="0"
+                min="0"
+                value={formData.super_jackpot_multiplier ?? ""}
+                onChange={onChange}
+                required={!!formData.super_jackpot}
+                pattern="^\\d+(\\.\\d{1,2})?$"
+                placeholder="0.00"
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (
+                    ["e", "E", "+", "-"].includes(e.key) ||
+                    (e.key === "." &&
+                      (e.currentTarget.value.includes(".") ||
+                        e.currentTarget.selectionStart === 0))
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -134,20 +179,12 @@ const BetPrizeForm: React.FC<BetPrizeFormProps> = ({
         </div>
       </div>
       <div className="mt-8 flex justify-end space-x-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-md transition-all shadow-md active:scale-95"
-        >
+        <SecondaryButton type="button" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95"
-        >
+        </SecondaryButton>
+        <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Saving..." : "Save"}
-        </button>
+        </PrimaryButton>
       </div>
     </form>
   );

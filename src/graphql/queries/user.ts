@@ -22,6 +22,7 @@ export const GET_USERS = gql`
           { first_name: { ilike: $searchTerm } }
           { last_name: { ilike: $searchTerm } }
           { email: { ilike: $searchTerm } }
+          { full_name: { ilike: $searchTerm } }
         ]
       }
     ) {
@@ -65,7 +66,6 @@ export const GET_UPLINE_LIST = gql`
           last_name
           full_name
           email
-          role
           is_quota_based
           upline
         }
@@ -139,7 +139,6 @@ export const UPDATE_USER = gql`
     $firstName: String
     $lastName: String
     $email: String
-    $role: String
     $isActive: Boolean
     $isArchive: Boolean
     $avatarUrl: String
@@ -151,7 +150,6 @@ export const UPDATE_USER = gql`
         first_name: $firstName
         last_name: $lastName
         email: $email
-        role: $role
         status: $isActive
         is_archive: $isArchive
         avatar_url: $avatarUrl

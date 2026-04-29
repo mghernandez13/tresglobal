@@ -8,7 +8,7 @@ import {
   GET_BET_PRIZES,
   UPDATE_BET_PRIZE,
 } from "../../../graphql/queries/betPrizes";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronsUpDown,
@@ -26,14 +26,20 @@ import type {
   BetPrizesQueryVariables,
   LottoQueryData,
   LottoQueryVariables,
+  UpdateBetPrizeMutation,
 } from "../../../types/api";
 import { formatTo12h } from "../../../utils/helper";
 import { GET_LOTTO_TYPES } from "../../../graphql/queries/lotto";
 import ViewBetPrizeModal from "../../../components/modals/betPrizes/ViewBetPrizeModal";
 import UpdateBetPrizeModal from "../../../components/modals/betPrizes/UpdateBetPrizeModal";
 import { formatCurrency } from "../../../utils/currency";
+import PrimaryButton from "../../../components/generic/buttons/Primary";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const BetPrizesPage: React.FC = () => {
+  useCheckUserPermissions("View Bet Prizes");
+
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("search") || "";
@@ -55,7 +61,22 @@ const BetPrizesPage: React.FC = () => {
   const [updatePrize, setUpdatePrize] = useState<
     BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"] | null
   >(null);
+  const [selectedGameTypes, setSelectedGameTypes] = useState<string[]>([]);
   const offset = (currentPage - 1) * pageSize;
+
+  // Static game type filter: only 2D, 3D, LP3, counts from all lotto types (unfiltered)
+  const allLottoTypes = useQuery<LottoQueryData, LottoQueryVariables>(
+    GET_LOTTO_TYPES,
+    {
+      variables: {
+        first: 1000, // large enough to get all
+        offset: 0,
+        filter: { is_archive: { eq: false } },
+        sortOrder: [{ name: "AscNullsFirst" }],
+      },
+      fetchPolicy: "network-only",
+    },
+  );
 
   const searchTerm = useMemo(() => {
     return searchQuery ? `%${searchQuery}%` : "%";
@@ -99,16 +120,23 @@ const BetPrizesPage: React.FC = () => {
   const betPrizesFilter = useMemo(() => {
     const and: unknown[] = [{ is_archive: { eq: false } }];
 
-    if (searchQuery) {
+    // If game type filter is selected, filter by lotto_type_ids matching those game types
+    if (selectedGameTypes.length > 0) {
+      // Find lotto_type_ids for selected game types from allLottoTypes
+      const lottoTypeIdsForGameTypes =
+        allLottoTypes.data?.lotto_typesCollection?.edges
+          ?.filter(({ node }) => selectedGameTypes.includes(node.game_type))
+          .map(({ node }) => node.id) ?? [];
+      and.unshift({ lotto_type_id: { in: lottoTypeIdsForGameTypes } });
+    } else if (searchQuery) {
       and.unshift({ lotto_type_id: { in: lottoTypeIds ?? [] } });
     }
 
     return { and };
-  }, [lottoTypeIds, searchQuery]);
+  }, [selectedGameTypes, allLottoTypes.data, lottoTypeIds, searchQuery]);
 
-  const [updateBetPrize, { loading: updateBetPrizeLoading }] = useMutation(
-    UPDATE_BET_PRIZE,
-    {
+  const [updateBetPrize, { loading: updateBetPrizeLoading }] =
+    useMutation<UpdateBetPrizeMutation>(UPDATE_BET_PRIZE, {
       refetchQueries: [
         {
           query: GET_BET_PRIZES,
@@ -120,8 +148,7 @@ const BetPrizesPage: React.FC = () => {
           },
         },
       ],
-    },
-  );
+    });
 
   const { data, loading, error } = useQuery<
     BetPrizesQueryData,
@@ -136,6 +163,44 @@ const BetPrizesPage: React.FC = () => {
     notifyOnNetworkStatusChange: true,
     fetchPolicy: "network-only",
   });
+
+  const { data: allBetPrizesData } = useQuery<BetPrizesQueryData>(
+    GET_BET_PRIZES,
+    {
+      notifyOnNetworkStatusChange: true,
+      fetchPolicy: "network-only",
+    },
+  );
+
+  // Game type filter counts based on lotto types actually referenced by bet prizes
+  const gameTypeOptions = useMemo(() => {
+    const counts: Record<string, Set<string>> = {
+      "2D": new Set(),
+      "3D": new Set(),
+      LP3: new Set(),
+    };
+    allBetPrizesData?.bet_prizesCollection?.edges.forEach(({ node }) => {
+      const gt = node.lotto_types?.game_type;
+      const ltId = node.lotto_types?.id;
+      if (gt && ltId && counts[gt] !== undefined) {
+        counts[gt].add(String(ltId));
+      }
+    });
+    return [
+      { name: "2D", value: "2D", count: counts["2D"].size },
+      { name: "3D", value: "3D", count: counts["3D"].size },
+      { name: "LP3", value: "LP3", count: counts["LP3"].size },
+    ];
+  }, [allBetPrizesData]);
+
+  const tableFilter = {
+    gameType: {
+      label: "Game Type",
+      selectedFilter: selectedGameTypes,
+      setSelectedFilter: setSelectedGameTypes,
+      data: gameTypeOptions,
+    },
+  };
 
   const handleSort = useCallback(
     (columnName: string) => {
@@ -240,18 +305,30 @@ const BetPrizesPage: React.FC = () => {
     bet_amount: number;
     prize: number;
     is_active: boolean;
+    super_jackpot?: boolean;
+    super_jackpot_multiplier?: number | "";
   }) => {
-    console.log("Updating prize with fields:", fields);
     if (!updatePrize) return;
     try {
-      await updateBetPrize({
+      const updateResponse = await updateBetPrize({
         variables: {
           id: updatePrize.id,
           betAmount: fields.bet_amount,
           prize: fields.prize,
           isActive: fields.is_active,
+          superJackpot: fields.super_jackpot,
+          superJackpotMultiplier: fields.super_jackpot_multiplier
+            ? Number(fields.super_jackpot_multiplier)
+            : 0,
         },
       });
+      if (
+        updateResponse &&
+        updateResponse.data?.updatebet_prizesCollection.records.length === 0
+      ) {
+        throw new Error("No records were updated. Please try again.");
+      }
+
       Swal.fire({
         icon: "success",
         title: "Update Bet Prize",
@@ -422,6 +499,9 @@ const BetPrizesPage: React.FC = () => {
       <div className="w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center justify-between mb-8">
           <Headline>Bet Prizes</Headline>
+          <PrimaryButton onClick={() => navigate("./create")}>
+            Create Bet Prize
+          </PrimaryButton>
         </div>
         <DataTable
           loading={loading || updateBetPrizeLoading}
@@ -442,6 +522,7 @@ const BetPrizesPage: React.FC = () => {
           pageSize={pageSize}
           setPageSize={setPageSize}
           onDeleteSelected={handleBulkDelete}
+          tableFilter={tableFilter}
         />
         <ViewBetPrizeModal
           open={viewModalOpen}

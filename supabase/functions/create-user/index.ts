@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     // Note: Do NOT use the user's JWT to initialize this client.
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SB_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       {
         auth: {
           autoRefreshToken: false,
@@ -53,7 +53,25 @@ Deno.serve(async (req) => {
       avatarUrl,
       isQuotaBased,
       upline,
+      isActive,
     } = await req.json();
+
+    // Fetch permissions array from permissions table
+    let permissionsArray = [];
+    if (permissionId) {
+      const { data: permData, error: permError } = await supabaseAdmin
+        .from("permissions")
+        .select("permissions")
+        .eq("id", permissionId)
+        .single();
+      if (permError) {
+        return new Response(JSON.stringify({ error: permError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      permissionsArray = permData?.permissions || [];
+    }
 
     const { data, error: createError } =
       await supabaseAdmin.auth.admin.createUser({
@@ -67,6 +85,9 @@ Deno.serve(async (req) => {
           is_quota_based: isQuotaBased,
           avatar_url: avatarUrl,
           upline: upline,
+          permissions: permissionsArray,
+          status: isActive,
+          is_archive: false,
         },
       });
 

@@ -1,4 +1,4 @@
-import { ChevronDown, Eye, EyeOff, Loader2, Upload, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Upload, User } from "lucide-react";
 import Input from "../generic/Input";
 import Label from "../generic/Label";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -24,6 +24,10 @@ import type {
 // ...existing code...
 import { useParams } from "react-router-dom";
 import Swal from "sweetalert2";
+import SecondaryButton from "../generic/buttons/Secondary";
+import PrimaryButton from "../generic/buttons/Primary";
+import Select from "../generic/Select";
+import { SUPER_ADMIN_EMAIL } from "../../types/constants";
 interface AgentFormProps {
   action: "add" | "edit";
   formData: AgentFormDataProps;
@@ -133,47 +137,49 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
     [toggleChangePasswordModal],
   );
 
+  // Recursive function to build hierarchy at any depth, starting from all top-level agents
   const formatHierarchy = useCallback(
     (profiles?: UserTypes[]) => {
-      const superAdmin = profiles?.find(
-        (p) => p.email === "superadmin@tresglobal.online",
-      );
-      const tree = [];
+      if (!profiles) return [];
 
-      if (superAdmin) {
-        // 1. Add the Super Admin to the top
-        tree.push({ ...superAdmin, level: 0 });
+      const superAdmin = profiles.find((p) => p.email === SUPER_ADMIN_EMAIL);
 
-        // 2. Find everyone who reports to Super Admin (The "Uplines")
-        const uplines = profiles?.filter(
-          (p) =>
-            (p.upline === superAdmin.id || p.upline === null) &&
-            p.email !== "superadmin@tresglobal.online",
-        );
+      const result: Array<{ id: string; label: string; level: number }> = [];
 
-        uplines?.forEach((upline) => {
-          tree.push({ ...upline, level: 1 });
-
-          // 3. Find everyone who reports to this Upline (The "Downlines")
-          const downlines = profiles?.filter((p) => p.upline === upline.id);
-
-          downlines?.forEach((downline) => {
-            tree.push({ ...downline, level: 2 });
-          });
+      // Helper to recursively add downlines
+      function addWithDownlines(user: UserTypes, level: number) {
+        result.push({
+          id: String(user.id),
+          label: rolesData?.permissionsCollection?.edges.some(
+            (role) =>
+              role.node.id === user.permission_id &&
+              role.node.name.toLowerCase().includes("admin"),
+          )
+            ? `Site Admin / ${String(user.full_name)}`
+            : `${String(user.full_name)} - ${String(user.email)}`,
+          level,
         });
+        // Always compare as strings for id/upline to ensure correct nesting
+        const downlines = profiles?.filter(
+          (p) => String(p.upline) === String(user.id),
+        );
+        downlines?.forEach((downline) => addWithDownlines(downline, level + 1));
       }
 
-      return tree.map((item) => ({
-        id: String(item?.id),
-        label: rolesData?.permissionsCollection?.edges.some(
-          (role) =>
-            role.node.id === item.permission_id &&
-            role.node.name.toLowerCase().includes("admin"),
-        )
-          ? `Site Admin / ${String(item.full_name)}`
-          : `${String(item?.full_name)} - ${String(item.email)}`,
-        level: item.level,
-      }));
+      // If super admin exists, treat all agents with upline === null and not superadmin as its direct downlines
+      if (superAdmin) {
+        addWithDownlines(superAdmin, 0);
+        const directDownlines = profiles.filter(
+          (p) => p.upline === null && p.email !== SUPER_ADMIN_EMAIL,
+        );
+        directDownlines.forEach((agent) => addWithDownlines(agent, 1));
+      } else {
+        // If no super admin, treat all top-level agents as roots
+        const topLevelAgents = profiles.filter((p) => p.upline === null);
+        topLevelAgents.forEach((agent) => addWithDownlines(agent, 0));
+      }
+
+      return result;
     },
     [rolesData],
   );
@@ -193,6 +199,7 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
 
     setUplineList(formatHierarchy(itemData));
   }, [formatHierarchy, uplineListData?.profilesCollection?.edges]);
+
   return (
     <form
       ref={formRef}
@@ -273,25 +280,19 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
 
         <div className="flex flex-col gap-2">
           <Label>Role</Label>
-          <div className="relative">
-            <select
-              name="permissionId"
-              value={formData.permissionId ?? ""}
-              onChange={handleFormChange}
-              className="bg-[#16191d] border border-gray-600 text-white w-full p-2 rounded-md focus:ring-2 focus:ring-yellow-500 outline-none appearance-none cursor-pointer"
-              required
-            >
-              <option value="">Select Role</option>
-              {rolesData?.permissionsCollection?.edges.map(({ node }) => (
-                <option key={node.id} value={node.id}>
-                  {node.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-              <ChevronDown />
-            </div>
-          </div>
+          <Select
+            name="permissionId"
+            value={formData.permissionId ?? ""}
+            onChange={handleFormChange}
+            required
+          >
+            <option value="">Select Role</option>
+            {rolesData?.permissionsCollection?.edges.map(({ node }) => (
+              <option key={node.id} value={node.id}>
+                {node.name}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -411,20 +412,15 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
 
       <div className="mt-8 flex gap-5 justify-end">
         {action === "add" && (
-          <button
+          <SecondaryButton
             type="button"
             disabled={loading}
             onClick={handleCreateAnother}
-            className="bg-gray-700 hover:bg-gray-600 hover:text-white text-white font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95"
           >
             {loading ? <Loading /> : `Create & Add Another`}
-          </button>
+          </SecondaryButton>
         )}
-        <button
-          disabled={loading}
-          type="submit"
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95"
-        >
+        <PrimaryButton disabled={loading} type="submit">
           {loading ? (
             <Loading />
           ) : action === "add" ? (
@@ -432,7 +428,7 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
           ) : (
             `Edit Agent`
           )}
-        </button>
+        </PrimaryButton>
       </div>
       <ChangePasswordModal
         isOpen={showChangePasswordModal}

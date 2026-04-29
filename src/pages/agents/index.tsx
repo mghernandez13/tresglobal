@@ -28,6 +28,7 @@ import Swal from "sweetalert2";
 import ViewAgentModal from "../../components/modals/agent/ViewAgentModal";
 import type { SortDirection } from "../../types/constants";
 import { useCheckUserPermissions } from "../../hooks/useCheckUserPermission";
+import PrimaryButton from "../../components/generic/buttons/Primary";
 
 const AgentsPage: React.FC = () => {
   useCheckUserPermissions("View Agents");
@@ -345,9 +346,12 @@ const AgentsPage: React.FC = () => {
   }, [rolesData]);
 
   const tableFilter = {
-    selectedFilter: selectedRoleFilter,
-    setSelectedFilter: setSelectedRoleFilter,
-    data: permissionRoleFilterOptions,
+    role: {
+      label: "Role",
+      selectedFilter: selectedRoleFilter,
+      setSelectedFilter: setSelectedRoleFilter,
+      data: permissionRoleFilterOptions,
+    },
   };
 
   const handleOnDeleteSelected = useCallback(
@@ -398,8 +402,11 @@ const AgentsPage: React.FC = () => {
   return (
     <AdminTemplate>
       <div className="flex-col w-full sm:mx-2 py-2 md:mx-10">
-        <div className="mb-5">
+        <div className="flex items-center justify-between mb-8">
           <Headline>Agents</Headline>
+          <PrimaryButton onClick={() => navigate("./create")}>
+            Create Agent
+          </PrimaryButton>
         </div>
         <DataTable
           loading={loading || updateUserLoading || bulkUpdateLoading}

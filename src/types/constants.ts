@@ -63,3 +63,7 @@ export const USER_PERMISSIONS = [
   "Update Reports",
   "Queues",
 ];
+
+export const GAME_TYPES = ["2D", "3D", "LP3"];
+
+export const SUPER_ADMIN_EMAIL = "superadmin@tresglobal.online";

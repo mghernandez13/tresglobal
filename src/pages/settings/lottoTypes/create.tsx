@@ -9,8 +9,11 @@ import Swal from "sweetalert2";
 import LottoTypeForm, {
   type LottoFormData,
 } from "../../../components/forms/LottoTypeForm";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const CreateLottoTypePage: React.FC = () => {
+  useCheckUserPermissions("Add Lotto Types");
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<LottoFormData>({
@@ -22,6 +25,7 @@ const CreateLottoTypePage: React.FC = () => {
     numberOfDigits: 0,
     minNumber: 0,
     maxNumber: 0,
+    logo_image: "",
   });
 
   // fields that should only accept numeric values
@@ -62,6 +66,10 @@ const CreateLottoTypePage: React.FC = () => {
     }
   };
 
+  const handleLogoChange = (url: string) => {
+    setFormData((prev) => ({ ...prev, logo_image: url }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,9 +82,10 @@ const CreateLottoTypePage: React.FC = () => {
           name: formData.name,
           daysActive: formData.daysActive,
           isActive: formData.isActive,
-          numberOfDigits: String(formData.numberOfDigits),
-          minNumber: String(formData.minNumber),
-          maxNumber: String(formData.maxNumber),
+          numberOfDigits: formData.numberOfDigits,
+          minNumber: formData.minNumber,
+          maxNumber: formData.maxNumber,
+          logo_image: formData.logo_image,
         },
       });
       Swal.fire({
@@ -112,6 +121,7 @@ const CreateLottoTypePage: React.FC = () => {
         <LottoTypeForm
           formData={formData}
           onChange={handleChange}
+          onLogoChange={handleLogoChange}
           onSubmit={handleSubmit}
           loading={loading}
           title="Lotto Type"

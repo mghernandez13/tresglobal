@@ -3,6 +3,8 @@ import { ChevronDown } from "lucide-react";
 import { getTimes } from "../../utils/helper";
 import Label from "../generic/Label";
 import Input from "../generic/Input";
+import SecondaryButton from "../generic/buttons/Secondary";
+import PrimaryButton from "../generic/buttons/Primary";
 
 export interface BetTypeFormData {
   gameType: string;
@@ -118,20 +120,12 @@ const BetTypeForm: React.FC<BetTypeFormProps> = ({
         </div>
       </div>
       <div className="mt-8 flex justify-end space-x-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-md transition-all shadow-md active:scale-95"
-        >
+        <SecondaryButton type="button" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95"
-        >
+        </SecondaryButton>
+        <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Saving..." : "Save"}
-        </button>
+        </PrimaryButton>
       </div>
     </form>
   );

@@ -11,8 +11,11 @@ import BetPrizeForm, {
   type BetPrizeFormData,
 } from "../../../components/forms/BetPrizeForm";
 import type { LottoQueryData, LottoQueryVariables } from "../../../types/api";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const CreateBetPrizePage: React.FC = () => {
+  useCheckUserPermissions("Add Bet Prizes");
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<BetPrizeFormData>({
@@ -70,6 +73,8 @@ const CreateBetPrizePage: React.FC = () => {
           lottoTypeId: formData.lottoTypeId,
           betAmount: Number(formData.betAmount),
           prize: Number(formData.prize),
+          superJackpot: formData.super_jackpot,
+          superJackpotMultiplier: Number(formData.super_jackpot_multiplier),
           isActive: formData.isActive,
         },
       });

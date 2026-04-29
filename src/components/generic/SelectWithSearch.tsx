@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Combobox,
   ComboboxButton,
@@ -24,6 +24,7 @@ export default function SearchableSelect(props: SearchableSelectProps) {
   const [selected, setSelected] = useState<SearchableSelectOption | null>(
     preSelectedOption ?? null,
   );
+
   const [query, setQuery] = useState("");
   const filteredPeople =
     query === ""
@@ -31,6 +32,11 @@ export default function SearchableSelect(props: SearchableSelectProps) {
       : data?.filter((item) =>
           item?.label?.toLowerCase().includes(query.toLowerCase()),
         );
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelected(preSelectedOption ?? null);
+  }, [preSelectedOption]);
 
   return (
     <div className="w-">
@@ -88,12 +94,18 @@ export default function SearchableSelect(props: SearchableSelectProps) {
                     style={{ paddingLeft: `${(person.level + 1) * 1}rem` }} // Dynamic indent
                   >
                     <div className="flex items-center gap-2">
-                      {/* Level indicators */}
-                      {person.level === 1 && (
-                        <span className="text-gray-600">├</span>
-                      )}
-                      {person.level === 2 && (
-                        <span className="text-gray-600 ml-2">└</span>
+                      {/* Indefinite level indicators */}
+                      {person.level > 0 && (
+                        <span
+                          className="text-gray-600"
+                          style={{ minWidth: `${person.level}ch` }}
+                        >
+                          {Array.from(
+                            { length: person.level - 1 },
+                            () => "│",
+                          ).join("")}
+                          {person.level === 1 ? "├" : "└"}
+                        </span>
                       )}
 
                       <span

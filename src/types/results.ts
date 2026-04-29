@@ -1,3 +1,5 @@
+import type { LottoType } from "./api";
+
 export interface DrawResult {
   id: number;
   draw_date: string;
@@ -5,6 +7,7 @@ export interface DrawResult {
   combination: string;
   created_at: string;
   is_archive: boolean;
+  lotto_types: LottoType;
 }
 
 export interface ResultsQueryData {

@@ -10,7 +10,7 @@ import type { AgentFormDataProps } from "../../types/generic";
 import { useCheckUserPermissions } from "../../hooks/useCheckUserPermission";
 
 const CreateAgentPage: React.FC = () => {
-  useCheckUserPermissions("Create Agents");
+  useCheckUserPermissions("Add Agents");
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);

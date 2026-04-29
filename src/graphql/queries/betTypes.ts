@@ -22,6 +22,9 @@ export const GET_BET_TYPES = gql`
           is_active
           game_type
           draw_time
+          betsCollection {
+            totalCount
+          }
         }
         cursor
       }

@@ -17,6 +17,7 @@ export const GET_BET_PRIZES = gql`
         node {
           id
           lotto_types {
+            id
             game_type
             draw_time
             name
@@ -24,6 +25,8 @@ export const GET_BET_PRIZES = gql`
           bet_amount
           prize
           is_active
+          super_jackpot
+          super_jackpot_multiplier
         }
         cursor
       }
@@ -42,6 +45,8 @@ export const CREATE_BET_PRIZE = gql`
     $betAmount: Number!
     $prize: Number!
     $isActive: Boolean!
+    $superJackpot: Boolean
+    $superJackpotMultiplier: Number
   ) {
     insertIntobet_prizesCollection(
       objects: [
@@ -50,6 +55,8 @@ export const CREATE_BET_PRIZE = gql`
           bet_amount: $betAmount
           prize: $prize
           is_active: $isActive
+          super_jackpot: $superJackpot
+          super_jackpot_multiplier: $superJackpotMultiplier
         }
       ]
     ) {
@@ -65,6 +72,8 @@ export const UPDATE_BET_PRIZE = gql`
     $id: UUID!
     $betAmount: Number
     $prize: Number
+    $superJackpot: Boolean
+    $superJackpotMultiplier: Number
     $isArchive: Boolean
     $isActive: Boolean
   ) {
@@ -73,6 +82,8 @@ export const UPDATE_BET_PRIZE = gql`
         is_archive: $isArchive
         bet_amount: $betAmount
         prize: $prize
+        super_jackpot: $superJackpot
+        super_jackpot_multiplier: $superJackpotMultiplier
         is_active: $isActive
       }
       filter: { id: { eq: $id } }

@@ -1,11 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Props } from "../types/generic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Banknote,
   ChartArea,
   ChartNoAxesColumn,
   Coins,
+  NotepadText,
   Settings,
   Users2,
 } from "lucide-react";
@@ -16,6 +17,14 @@ const Sidebar = (props: Props) => {
   const navigate = useNavigate();
   const { pathname } = location;
   const [showSettings, setShowSettings] = useState(false);
+
+  const navigatePage = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+      e.preventDefault();
+      navigate(url);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const settingsPath = [
@@ -65,7 +74,8 @@ const Sidebar = (props: Props) => {
           <ul className="space-y-2">
             <li>
               <a
-                href="/dashboard"
+                href="#"
+                onClick={(e) => navigatePage(e, "/dashboard")}
                 className={`flex ${pathname === "/dashboard" ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <ChartArea />
@@ -75,7 +85,8 @@ const Sidebar = (props: Props) => {
             <li>
               <a
                 href="#"
-                className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                onClick={(e) => navigatePage(e, "/summary")}
+                className={`flex ${pathname.includes("/summary") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <ChartNoAxesColumn />
                 <span className="ml-3">Summary</span>
@@ -84,7 +95,8 @@ const Sidebar = (props: Props) => {
             <li>
               <a
                 href="#"
-                className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                onClick={(e) => navigatePage(e, "/bets")}
+                className={`flex ${pathname.includes("/bets") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Banknote />
                 <span className="ml-3">Bets</span>
@@ -93,7 +105,8 @@ const Sidebar = (props: Props) => {
             <li>
               <a
                 href="#"
-                className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                onClick={(e) => navigatePage(e, "/dummy-bets")}
+                className={`flex ${pathname.includes("/dummy-bets") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Coins />
                 <span className="ml-3">Dummy Bets</span>
@@ -101,26 +114,18 @@ const Sidebar = (props: Props) => {
             </li>
             <li>
               <a
-                href="/results"
+                href="#"
+                onClick={(e) => navigatePage(e, "/results")}
                 className={`flex ${pathname.includes("/results") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
-                <svg
-                  aria-hidden="true"
-                  className="w-6 h-6 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
-                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
-                </svg>
+                <NotepadText />
                 <span className="ml-3">Results</span>
               </a>
             </li>
             <li>
               <a
                 href="#"
-                onClick={() => navigate("/agents")}
+                onClick={(e) => navigatePage(e, "/agents")}
                 className={`flex ${pathname.includes("/agents") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Users2 />
@@ -180,7 +185,8 @@ const Sidebar = (props: Props) => {
               >
                 <li>
                   <a
-                    href="/settings/bet-prizes"
+                    href="#"
+                    onClick={(e) => navigatePage(e, "/settings/bet-prizes")}
                     className={`flex ${pathname.includes("/settings/bet-prizes") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
                     Bet Prizes
@@ -188,7 +194,8 @@ const Sidebar = (props: Props) => {
                 </li>
                 <li>
                   <a
-                    href="/settings/bet-types"
+                    href="#"
+                    onClick={(e) => navigatePage(e, "/settings/bet-types")}
                     className={`flex ${pathname.includes("/settings/bet-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
                     Bet Types
@@ -196,7 +203,8 @@ const Sidebar = (props: Props) => {
                 </li>
                 <li>
                   <a
-                    href="/settings/lotto-types"
+                    href="#"
+                    onClick={(e) => navigatePage(e, "/settings/lotto-types")}
                     className={`flex ${pathname.includes("/settings/lotto-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
                     Lotto Types
@@ -204,7 +212,8 @@ const Sidebar = (props: Props) => {
                 </li>
                 <li>
                   <a
-                    href="/settings/roles"
+                    href="#"
+                    onClick={(e) => navigatePage(e, "/settings/roles")}
                     className={`flex ${pathname.includes("/settings/roles") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
                     Roles
@@ -212,7 +221,8 @@ const Sidebar = (props: Props) => {
                 </li>
                 <li>
                   <a
-                    href="/settings/configuration"
+                    href="#"
+                    onClick={(e) => navigatePage(e, "/settings/configuration")}
                     className={`flex ${pathname.includes("/settings/configuration") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
                     Configuration

@@ -25,8 +25,12 @@ import Swal from "sweetalert2";
 import { DAYS_OF_WEEK, type SortDirection } from "../../../types/constants";
 import { formatTo12h } from "../../../utils/helper";
 import type { LottoQueryData, LottoQueryVariables } from "../../../types/api";
+import PrimaryButton from "../../../components/generic/buttons/Primary";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const LottoTypesPage: React.FC = () => {
+  useCheckUserPermissions("View Lotto Types");
+
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("search") || "";
@@ -114,6 +118,20 @@ const LottoTypesPage: React.FC = () => {
           },
         },
       ],
+    },
+  );
+
+  // Static game type filter: only 2D, 3D, LP3, but counts from all lotto types (unfiltered)
+  const allLottoTypes = useQuery<LottoQueryData, LottoQueryVariables>(
+    GET_LOTTO_TYPES,
+    {
+      variables: {
+        first: 1000, // large enough to get all
+        offset: 0,
+        filter: { is_archive: { eq: false } },
+        sortOrder: [{ name: "AscNullsFirst" }],
+      },
+      fetchPolicy: "network-only",
     },
   );
 
@@ -413,24 +431,28 @@ const LottoTypesPage: React.FC = () => {
     togglePopup,
   ]);
 
-  // filter configuration for game types
-  const gameTypeFilter = useMemo(() => {
-    const counts: Record<string, number> = {};
-    data?.lotto_typesCollection?.edges?.forEach((e) => {
-      const gt = e.node?.game_type || "";
-      counts[gt] = (counts[gt] || 0) + 1;
+  const gameTypeOptions = useMemo(() => {
+    const counts: Record<string, number> = { "2D": 0, "3D": 0, LP3: 0 };
+    allLottoTypes.data?.lotto_typesCollection?.edges.forEach(({ node }) => {
+      if (counts[node.game_type] !== undefined) {
+        counts[node.game_type] += 1;
+      }
     });
-    const items = Object.entries(counts).map(([value, count]) => ({
-      name: value,
-      value,
-      count,
-    }));
-    return {
+    return [
+      { name: "2D", value: "2D", count: counts["2D"] },
+      { name: "3D", value: "3D", count: counts["3D"] },
+      { name: "LP3", value: "LP3", count: counts["LP3"] },
+    ];
+  }, [allLottoTypes.data]);
+
+  const tableFilter = {
+    gameType: {
+      label: "Game Type",
       selectedFilter: selectedGameTypes,
       setSelectedFilter: setSelectedGameTypes,
-      data: items,
-    };
-  }, [data, selectedGameTypes]);
+      data: gameTypeOptions,
+    },
+  };
 
   // reset pagination when filter changes
   useEffect(() => {
@@ -506,8 +528,11 @@ const LottoTypesPage: React.FC = () => {
   return (
     <AdminTemplate>
       <div className="flex-col w-full sm:mx-2 py-2 md:mx-10">
-        <div className="mb-5">
+        <div className="flex items-center justify-between mb-8">
           <Headline>Lotto Types</Headline>
+          <PrimaryButton onClick={() => navigate("./create")}>
+            Create Lotto Type
+          </PrimaryButton>
         </div>
         <DataTable
           loading={loading || updateLottoLoading || bulkUpdateLoading}
@@ -525,7 +550,7 @@ const LottoTypesPage: React.FC = () => {
           hasNextPage={hasNextPage}
           pageSize={pageSize}
           setPageSize={setPageSize}
-          tableFilter={gameTypeFilter}
+          tableFilter={tableFilter}
           onDeleteSelected={handleOnDeleteSelected}
         />
       </div>

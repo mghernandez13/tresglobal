@@ -65,17 +65,46 @@ const TablePagination: React.FC<TablePaginationProps> = (props) => {
           </button>
         </li>
 
-        {paginationRange.map((page, index) => (
-          <li key={index}>
-            <button
-              disabled={loading || page === "..."}
-              onClick={() => handlePageNavigation(index + 1)}
-              className={`flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 ${currentPage - 1 === index ? `dark:bg-gray-900` : `dark:bg-gray-800`} dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white`}
-            >
-              {page}
-            </button>
-          </li>
-        ))}
+        {paginationRange.map((page, index) => {
+          // If page is '...', clicking it should go to the middle page between previous and next visible page numbers
+          let onClickHandler = undefined;
+          if (typeof page === "number") {
+            onClickHandler = () => handlePageNavigation(page);
+          } else if (page === "...") {
+            // Find previous and next page numbers
+            let prev: string | null = null,
+              next: string | null = null;
+            // Look backwards for previous number
+            for (let i = index - 1; i >= 0; i--) {
+              if (typeof paginationRange[i] === "number") {
+                prev = paginationRange[i].toString();
+                break;
+              }
+            }
+            // Look forwards for next number
+            for (let i = index + 1; i < paginationRange.length; i++) {
+              if (typeof paginationRange[i] === "number") {
+                next = paginationRange[i].toString();
+                break;
+              }
+            }
+            if (prev !== null && next !== null) {
+              const middle = Math.floor((Number(prev) + Number(next)) / 2);
+              onClickHandler = () => handlePageNavigation(middle);
+            }
+          }
+          return (
+            <li key={index}>
+              <button
+                disabled={loading || (page === "..." && !onClickHandler)}
+                onClick={onClickHandler}
+                className={`flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 ${currentPage === page ? `dark:bg-gray-900` : `dark:bg-gray-800`} dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white`}
+              >
+                {page}
+              </button>
+            </li>
+          );
+        })}
 
         <li>
           <button

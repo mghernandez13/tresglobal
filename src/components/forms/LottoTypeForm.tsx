@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { getTimes } from "../../utils/helper";
 import { DAYS_OF_WEEK } from "../../types/constants";
 import Label from "../generic/Label";
 import Input from "../generic/Input";
+import SecondaryButton from "../generic/buttons/Secondary";
+import PrimaryButton from "../generic/buttons/Primary";
+import { supabase } from "../../db/supabase";
+import Swal from "sweetalert2";
 
 export interface LottoFormData {
   gameType: string;
@@ -14,6 +18,7 @@ export interface LottoFormData {
   numberOfDigits: number;
   minNumber: number;
   maxNumber: number;
+  logo_image?: string;
 }
 
 interface LottoTypeFormProps {
@@ -21,7 +26,8 @@ interface LottoTypeFormProps {
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
-  onSubmit: (e: React.SubmitEvent) => void;
+  onLogoChange: (url: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
   loading: boolean;
   title: string; // "Create" or "Update"
   onCancel: () => void;
@@ -30,11 +36,105 @@ interface LottoTypeFormProps {
 const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
   formData,
   onChange,
+  onLogoChange,
   onSubmit,
   loading,
   onCancel,
 }) => {
   const times = getTimes();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [dragActive, setDragActive] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>,
+  ) => {
+    let file: File | undefined;
+    if ("dataTransfer" in e) {
+      file = e.dataTransfer.files?.[0];
+    } else {
+      file = e.target.files?.[0];
+    }
+    if (!file) return;
+    setUploading(true);
+    setErrorMsg("");
+    try {
+      if (!file.type.startsWith("image/")) {
+        setErrorMsg("Only image files are allowed.");
+        setUploading(false);
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        setErrorMsg("Image must be less than 2MB.");
+        setUploading(false);
+        return;
+      }
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+      const filePath = `lotto-types/${fileName}`;
+      const { error } = await supabase.storage
+        .from("app")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+      if (error) throw error;
+      // Get public URL
+      const { data } = supabase.storage.from("app").getPublicUrl(filePath);
+      if (data?.publicUrl) {
+        onLogoChange(data.publicUrl);
+      }
+    } catch (err) {
+      setErrorMsg("Error uploading image");
+    } finally {
+      setUploading(false);
+      setDragActive(false);
+    }
+  };
+
+  // Remove logo image from Supabase storage
+  const handleRemoveLogo = async () => {
+    if (!formData.logo_image) {
+      onLogoChange("");
+      return;
+    }
+    try {
+      // Extract path after the bucket URL
+      const url = formData.logo_image;
+      const match = url.match(/\/storage\/v1\/object\/public\/app\/(.+)$/);
+      const path = match?.[1];
+      if (path) {
+        await supabase.storage.from("app").remove([path]);
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to remove logo image: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      onLogoChange("");
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    handleLogoUpload(e);
+  };
 
   return (
     <form
@@ -42,6 +142,69 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
       className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col md:flex-row md:flex-wrap gap-6">
+        <div className="flex w-full">
+          {/* Logo Upload */}
+          <div className="flex flex-col gap-2 w-full">
+            <Label>Logo Image</Label>
+            <div
+              className={`flex flex-col items-center justify-center gap-2 border-2 ${dragActive ? "border-yellow-500 bg-yellow-900/10" : "border-gray-600 bg-[#16191d]"} border-dashed rounded-md p-4 relative transition-colors`}
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+              style={{ minHeight: 120 }}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleLogoUpload}
+              />
+              {!formData.logo_image && (
+                <>
+                  <button
+                    type="button"
+                    className="px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Uploading..." : "Upload or Drag Image"}
+                  </button>
+                  <span className="text-xs text-gray-400">
+                    PNG, JPG, max 2MB
+                  </span>
+                  {errorMsg && (
+                    <span className="text-xs text-red-400">{errorMsg}</span>
+                  )}
+                </>
+              )}
+              {formData.logo_image && (
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={formData.logo_image}
+                    alt="Logo Preview"
+                    className="w-24 h-24 object-contain border border-gray-600 rounded bg-white"
+                  />
+                  <button
+                    type="button"
+                    className="px-2 py-1 text-xs bg-yellow-500 text-black rounded hover:bg-yellow-600"
+                    onClick={handleRemoveLogo}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {dragActive && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-yellow-400 font-bold text-lg">
+                    Drop image here
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="flex w-full gap-4">
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Game Type</Label>
@@ -174,20 +337,12 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
       </div>
 
       <div className="mt-8 flex justify-end space-x-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-md transition-all shadow-md active:scale-95"
-        >
+        <SecondaryButton type="button" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95 disabled:opacity-60"
-        >
+        </SecondaryButton>
+        <PrimaryButton type="submit" disabled={loading}>
           {loading ? `Saving...` : `Save`}
-        </button>
+        </PrimaryButton>
       </div>
     </form>
   );

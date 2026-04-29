@@ -27,6 +27,7 @@ import type {
   BetTypesQueryData,
   BetTypesQueryVariables,
 } from "../../../types/api";
+import PrimaryButton from "../../../components/generic/buttons/Primary";
 
 const BetTypesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -68,6 +69,11 @@ const BetTypesPage: React.FC = () => {
     }
     return { and: andArr };
   }, [searchQuery, selectedGameTypes]);
+
+  const { data: allBetTypesData } = useQuery<BetTypesQueryData>(GET_BET_TYPES, {
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "network-only",
+  });
 
   const { data, loading, error } = useQuery<
     BetTypesQueryData,
@@ -372,24 +378,28 @@ const BetTypesPage: React.FC = () => {
     );
   }, [data, handleDelete, navigate, toggleViewModal]);
 
-  // filter configuration for game types
-  const gameTypeFilter = useMemo(() => {
-    const counts: Record<string, number> = {};
-    data?.bet_typesCollection?.edges?.forEach((e) => {
-      const gt = e.node?.game_type || "";
-      counts[gt] = (counts[gt] || 0) + 1;
+  const gameTypeOptions = useMemo(() => {
+    const counts: Record<string, number> = { "2D": 0, "3D": 0, LP3: 0 };
+    allBetTypesData?.bet_typesCollection?.edges.forEach(({ node }) => {
+      if (node.game_type && counts[node.game_type] !== undefined) {
+        counts[node.game_type] += 1;
+      }
     });
-    const items = Object.entries(counts).map(([value, count]) => ({
-      name: value,
-      value,
-      count,
-    }));
-    return {
+    return [
+      { name: "2D", value: "2D", count: counts["2D"] },
+      { name: "3D", value: "3D", count: counts["3D"] },
+      { name: "LP3", value: "LP3", count: counts["LP3"] },
+    ];
+  }, [allBetTypesData]);
+
+  const tableFilter = {
+    gameType: {
+      label: "Game Type",
       selectedFilter: selectedGameTypes,
       setSelectedFilter: setSelectedGameTypes,
-      data: items,
-    };
-  }, [data, selectedGameTypes]);
+      data: gameTypeOptions,
+    },
+  };
 
   // reset pagination when filter changes
   useEffect(() => {
@@ -403,6 +413,9 @@ const BetTypesPage: React.FC = () => {
       <div className="w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center justify-between mb-8">
           <Headline>Bet Types</Headline>
+          <PrimaryButton onClick={() => navigate("./create")}>
+            Create Bet Type
+          </PrimaryButton>
         </div>
 
         <DataTable
@@ -423,7 +436,7 @@ const BetTypesPage: React.FC = () => {
           }
           pageSize={pageSize}
           setPageSize={setPageSize}
-          tableFilter={gameTypeFilter}
+          tableFilter={tableFilter}
           onDeleteSelected={handleOnDeleteSelected}
         />
 

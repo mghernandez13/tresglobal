@@ -8,8 +8,11 @@ import RoleForm, { type RoleFormData } from "./RoleForm";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ADMIN_PERMISSIONS, USER_PERMISSIONS } from "../../../types/constants";
+import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
 
 const CreateRolePage: React.FC = () => {
+  useCheckUserPermissions("Add Roles");
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState<RoleFormData>({
     name: "",

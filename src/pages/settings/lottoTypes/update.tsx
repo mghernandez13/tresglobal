@@ -30,6 +30,7 @@ const UpdateLottoTypePage: React.FC = () => {
     numberOfDigits: 0,
     minNumber: 0,
     maxNumber: 0,
+    logo_image: "",
   });
 
   const numericFields = [
@@ -62,6 +63,7 @@ const UpdateLottoTypePage: React.FC = () => {
         numberOfDigits: Number(node.number_of_digits || 0),
         minNumber: Number(node.min_number || 0),
         maxNumber: Number(node.max_number || 0),
+        logo_image: node.logo_image || "",
       });
     }
   }, [data]);
@@ -94,6 +96,10 @@ const UpdateLottoTypePage: React.FC = () => {
     }
   };
 
+  const handleLogoChange = (url: string) => {
+    setFormData((prev) => ({ ...prev, logo_image: url }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -106,9 +112,10 @@ const UpdateLottoTypePage: React.FC = () => {
           name: formData.name,
           daysActive: formData.daysActive,
           isActive: formData.isActive,
-          numberOfDigits: String(formData.numberOfDigits),
-          minNumber: String(formData.minNumber),
-          maxNumber: String(formData.maxNumber),
+          numberOfDigits: formData.numberOfDigits,
+          minNumber: formData.minNumber,
+          maxNumber: formData.maxNumber,
+          logoImage: formData.logo_image,
         },
       });
       Swal.fire({
@@ -143,6 +150,7 @@ const UpdateLottoTypePage: React.FC = () => {
         <LottoTypeForm
           formData={formData}
           onChange={handleChange}
+          onLogoChange={handleLogoChange}
           onSubmit={handleSubmit}
           loading={loading}
           title="Lotto Type"

@@ -13,9 +13,12 @@ export type TableFilterData = {
 };
 
 export interface TableFilter {
-  selectedFilter: string[];
-  setSelectedFilter: React.Dispatch<React.SetStateAction<string[]>>;
-  data: TableFilterData[];
+  [key: string]: {
+    label: string;
+    selectedFilter: string[];
+    setSelectedFilter: React.Dispatch<React.SetStateAction<string[]>>;
+    data: TableFilterData[];
+  };
 }
 
 export interface TablePagination {
@@ -39,7 +42,7 @@ export interface TableRecordProps {
     render: React.ReactNode;
   };
 
-  data: Record<string, string | JSX.Element | undefined | number>[];
+  data: Record<string, string | JSX.Element | undefined | number | boolean>[];
   tableFilter?: TableFilter;
   pagination: TablePagination;
   searchParams: URLSearchParams;
@@ -47,6 +50,7 @@ export interface TableRecordProps {
   hasNextPage: boolean;
   pageSize: number;
   setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  bulkAction?: boolean;
 
   /**
    * Called when the user chooses "Delete selected" from the header menu.

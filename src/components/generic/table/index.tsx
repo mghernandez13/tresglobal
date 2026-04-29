@@ -20,6 +20,7 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
     pageSize,
     setPageSize,
     onDeleteSelected,
+    bulkAction = true,
   } = props;
 
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
@@ -83,40 +84,42 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-              <th scope="col" className="px-4 py-3 relative">
-                <div className="flex items-center space-x-1">
-                  <input
-                    type="checkbox"
-                    checked={
-                      data
-                        ? selectedRows.size === data.length && data.length > 0
-                        : false
-                    }
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className=" accent-yellow-500 bg-[#16191d] border-gray-600 w-4 h-4 cursor-pointer"
-                  />
-                  <button
-                    onClick={toggleMenu}
-                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                    aria-label="More options"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                  {menuOpen && (
-                    <div
-                      ref={menuRef}
-                      className="absolute left-0 mt-8 w-40 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10"
+              {bulkAction && (
+                <th scope="col" className="px-4 py-3 relative">
+                  <div className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      checked={
+                        data
+                          ? selectedRows.size === data.length && data.length > 0
+                          : false
+                      }
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className=" accent-yellow-500 bg-[#16191d] border-gray-600 w-4 h-4 cursor-pointer"
+                    />
+                    <button
+                      onClick={toggleMenu}
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                      aria-label="More options"
                     >
-                      <button
-                        onClick={handleDeleteSelected}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    {menuOpen && (
+                      <div
+                        ref={menuRef}
+                        className="absolute left-0 mt-8 w-40 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10"
                       >
-                        Delete selected
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </th>
+                        <button
+                          onClick={handleDeleteSelected}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        >
+                          Delete selected
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </th>
+              )}
               {columns.render}
               <th scope="col" className="px-4 py-3">
                 <span className="sr-only">Actions</span>
@@ -129,16 +132,18 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
               data.length > 0 &&
               data.map((dataItem, rowIndex) => (
                 <tr className="border-b dark:border-gray-700">
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedRows.has(rowIndex)}
-                      onChange={(e) =>
-                        handleRowSelect(rowIndex, e.target.checked)
-                      }
-                      className=" accent-yellow-500 bg-[#16191d] border-gray-600 w-4 h-4 cursor-pointer"
-                    />
-                  </td>
+                  {bulkAction && (
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.has(rowIndex)}
+                        onChange={(e) =>
+                          handleRowSelect(rowIndex, e.target.checked)
+                        }
+                        className=" accent-yellow-500 bg-[#16191d] border-gray-600 w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {Object.values(dataItem).map((item, index) => (
                     <>
                       {index === 0 ? (

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import Label from "../../components/generic/Label";
-import Input from "../../components/generic/Input";
-import SelectWithSearch from "../../components/generic/SelectWithSearch";
+import Label from "../generic/Label";
+import Input from "../generic/Input";
+import SelectWithSearch from "../generic/SelectWithSearch";
 import { useQuery } from "@apollo/client/react";
 import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
 import type { LottoQueryData, LottoQueryVariables } from "../../types/api";
@@ -9,19 +9,19 @@ import type { SearchableSelectOption } from "../../types/generic";
 import { formatDrawDate, isValueNumberic } from "../../utils/helper";
 import Swal from "sweetalert2";
 import { supabase } from "../../db/supabase";
-import { UserAuth } from "../../components/context/AuthContext";
+import { UserAuth } from "../context/AuthContext";
 import { useExtendedState } from "../../hooks/state";
 
 interface ResultFormProps {
   initialValues?: {
     draw_date: string;
-    draw_type: number | null;
+    draw_type: string;
     combination: string;
     password?: string;
   };
   onSubmit: (values: {
     draw_date: string;
-    draw_type: number | null;
+    draw_type: string;
     combination: string;
     refresh?: boolean;
   }) => void;
@@ -40,10 +40,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
     useExtendedState(false);
   const [form, setForm] = React.useState({
     draw_date: initialValues?.draw_date || "",
-    draw_type:
-      typeof initialValues?.draw_type === "number"
-        ? initialValues?.draw_type
-        : null,
+    draw_type: initialValues?.draw_type || "",
     combination: initialValues?.combination || "",
     password: initialValues?.password || "",
   });
@@ -91,7 +88,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
   };
 
   const handleSelectChange = (option: SearchableSelectOption) => {
-    setForm((prev) => ({ ...prev, draw_type: Number(option.value) }));
+    setForm((prev) => ({ ...prev, draw_type: option.value ?? "" }));
   };
 
   const handleSubmit = useCallback(
@@ -99,9 +96,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
       e.preventDefault();
       // Show confirmation modal with details
       const lottoType = lottoTypesData?.lotto_typesCollection?.edges.find(
-        (edge) =>
-          Number(edge.node.id) === form.draw_type ||
-          edge.node.id === String(form.draw_type),
+        (edge) => edge.node.id === form.draw_type,
       )?.node;
       const confirm = await Swal.fire({
         icon: "question",
@@ -137,17 +132,14 @@ const ResultForm: React.FC<ResultFormProps> = ({
 
       onSubmit({
         draw_date: form.draw_date,
-        draw_type:
-          typeof form.draw_type === "string"
-            ? Number(form.draw_type)
-            : form.draw_type,
+        draw_type: form.draw_type,
         combination: form.combination,
         refresh: createAnother || latestCreateAnother,
       });
       // Reset form
       setForm({
         draw_date: "",
-        draw_type: null,
+        draw_type: "",
         combination: "",
         password: "",
       });
@@ -171,9 +163,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
   }, [setCreateAnother]);
 
   const selectedLottoType = lottoTypesData?.lotto_typesCollection?.edges.find(
-    (edge) =>
-      Number(edge.node.id) === form.draw_type ||
-      edge.node.id === String(form.draw_type),
+    (edge) => edge.node.id === form.draw_type,
   )?.node;
 
   const lottoTypeOptions: SearchableSelectOption[] = (
@@ -195,7 +185,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
     } else {
       setCombInputs([]);
     }
-  }, [form, selectedLottoType]);
+  }, [form, selectedLottoType, lottoTypesData]);
 
   return (
     <form
@@ -221,9 +211,8 @@ const ResultForm: React.FC<ResultFormProps> = ({
             data={lottoTypeOptions}
             name="draw_type"
             preSelectedOption={
-              lottoTypeOptions.find(
-                (opt) => Number(opt.value) === form.draw_type,
-              ) || null
+              lottoTypeOptions.find((opt) => opt.value === form.draw_type) ||
+              null
             }
             handleFormChange={handleSelectChange}
           />
