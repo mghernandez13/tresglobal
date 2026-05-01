@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Props } from "../types/generic";
 import { useCallback, useEffect, useState } from "react";
+import { useSidebar } from "./context/SidebarContext";
 import {
   Banknote,
   ChartArea,
@@ -9,6 +10,11 @@ import {
   NotepadText,
   Settings,
   Users2,
+  Gift,
+  ListOrdered,
+  Ticket,
+  UserCog,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const Sidebar = (props: Props) => {
@@ -40,8 +46,16 @@ const Sidebar = (props: Props) => {
     }
   }, [pathname]);
 
+  const { collapsed } = useSidebar();
   return (
-    <div className={className}>
+    <div
+      className={
+        className +
+        (collapsed
+          ? " sidebar-collapsed max-w-20 w-20 transition-all duration-200 overflow-x-hidden"
+          : " max-w-64 w-1/5 transition-all duration-200")
+      }
+    >
       <button
         data-drawer-target="default-sidebar"
         data-drawer-toggle="default-sidebar"
@@ -79,7 +93,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname === "/dashboard" ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <ChartArea />
-                <span className="ml-3">Dashboard</span>
+                {!collapsed && <span className="ml-3">Dashboard</span>}
               </a>
             </li>
             <li>
@@ -89,7 +103,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname.includes("/summary") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <ChartNoAxesColumn />
-                <span className="ml-3">Summary</span>
+                {!collapsed && <span className="ml-3">Summary</span>}
               </a>
             </li>
             <li>
@@ -99,7 +113,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname.includes("/bets") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Banknote />
-                <span className="ml-3">Bets</span>
+                {!collapsed && <span className="ml-3">Bets</span>}
               </a>
             </li>
             <li>
@@ -109,7 +123,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname.includes("/dummy-bets") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Coins />
-                <span className="ml-3">Dummy Bets</span>
+                {!collapsed && <span className="ml-3">Dummy Bets</span>}
               </a>
             </li>
             <li>
@@ -119,7 +133,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname.includes("/results") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <NotepadText />
-                <span className="ml-3">Results</span>
+                {!collapsed && <span className="ml-3">Results</span>}
               </a>
             </li>
             <li>
@@ -129,7 +143,7 @@ const Sidebar = (props: Props) => {
                 className={`flex ${pathname.includes("/agents") ? `bg-[#1a1a1a]` : ``} items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
               >
                 <Users2 />
-                <span className="ml-3">Agents</span>
+                {!collapsed && <span className="ml-3">Agents</span>}
               </a>
             </li>
             {/* <li>
@@ -162,22 +176,26 @@ const Sidebar = (props: Props) => {
                 data-collapse-toggle="dropdown-authentication"
               >
                 <Settings />
-                <span className="flex-1 ml-3 text-left whitespace-nowrap">
-                  Settings
-                </span>
-                <svg
-                  aria-hidden="true"
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                      Settings
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      className="w-6 h-6"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      ></path>
+                    </svg>
+                  </>
+                )}
               </button>
               <ul
                 id="dropdown-authentication"
@@ -187,45 +205,50 @@ const Sidebar = (props: Props) => {
                   <a
                     href="#"
                     onClick={(e) => navigatePage(e, "/settings/bet-prizes")}
-                    className={`flex ${pathname.includes("/settings/bet-prizes") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
+                    className={`flex ${pathname.includes("/settings/bet-prizes") ? `bg-[#1a1a1a]` : ``} items-center p-2 ${collapsed ? "pl-2" : "pl-11"} w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
-                    Bet Prizes
+                    <Gift className="w-5 h-5 mr-2" />
+                    {!collapsed && "Bet Prizes"}
                   </a>
                 </li>
                 <li>
                   <a
                     href="#"
                     onClick={(e) => navigatePage(e, "/settings/bet-types")}
-                    className={`flex ${pathname.includes("/settings/bet-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
+                    className={`flex ${pathname.includes("/settings/bet-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 ${collapsed ? "pl-2" : "pl-11"} w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
-                    Bet Types
+                    <ListOrdered className="w-5 h-5 mr-2" />
+                    {!collapsed && "Bet Types"}
                   </a>
                 </li>
                 <li>
                   <a
                     href="#"
                     onClick={(e) => navigatePage(e, "/settings/lotto-types")}
-                    className={`flex ${pathname.includes("/settings/lotto-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
+                    className={`flex ${pathname.includes("/settings/lotto-types") ? `bg-[#1a1a1a]` : ``} items-center p-2 ${collapsed ? "pl-2" : "pl-11"} w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
-                    Lotto Types
+                    <Ticket className="w-5 h-5 mr-2" />
+                    {!collapsed && "Lotto Types"}
                   </a>
                 </li>
                 <li>
                   <a
                     href="#"
                     onClick={(e) => navigatePage(e, "/settings/roles")}
-                    className={`flex ${pathname.includes("/settings/roles") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
+                    className={`flex ${pathname.includes("/settings/roles") ? `bg-[#1a1a1a]` : ``} items-center p-2 ${collapsed ? "pl-2" : "pl-11"} w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
-                    Roles
+                    <UserCog className="w-5 h-5 mr-2" />
+                    {!collapsed && "Roles"}
                   </a>
                 </li>
                 <li>
                   <a
                     href="#"
                     onClick={(e) => navigatePage(e, "/settings/configuration")}
-                    className={`flex ${pathname.includes("/settings/configuration") ? `bg-[#1a1a1a]` : ``} items-center p-2 pl-11 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
+                    className={`flex ${pathname.includes("/settings/configuration") ? `bg-[#1a1a1a]` : ``} items-center p-2 ${collapsed ? "pl-2" : "pl-11"} w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700`}
                   >
-                    Configuration
+                    <SlidersHorizontal className="w-5 h-5 mr-2" />
+                    {!collapsed && "Configuration"}
                   </a>
                 </li>
               </ul>

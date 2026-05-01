@@ -1,7 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import Login from "./pages/login";
-import DashboardPage from "./pages/dashboard";
 import AgentsPage from "./pages/agents";
 import CreateAgentPage from "./pages/agents/create";
 import UpdateAgentPage from "./pages/agents/update";
@@ -24,7 +23,8 @@ import MyProfilePage from "./pages/profile";
 import BetsPage from "./pages/bets";
 import DummyBetsPage from "./pages/dummybets";
 import ResultsDetailsPage from "./pages/results/details";
-import QrScannerPage from "./pages/qrscanner";
+import SummaryPage from "./pages/summary";
+import DashboardPage from "./pages/dashboard";
 
 export const router = createBrowserRouter([
   { path: "/", element: <App /> },
@@ -36,7 +36,10 @@ export const router = createBrowserRouter([
     path: "/dashboard",
     element: <DashboardPage />,
   },
-
+  {
+    path: "/summary",
+    element: <SummaryPage />,
+  },
   {
     path: "/agents",
     element: <AgentsPage />,

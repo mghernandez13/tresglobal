@@ -26,7 +26,7 @@ const ResultsPage: React.FC = () => {
   }>({ column: "draw_date", direction: "DescNullsLast" });
   const [pageSize, setPageSize] = useState<number>(10);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedResult, setSelectedResult] = useState<
+  const [selectedResult] = useState<
     ResultsQueryData["draw_resultsCollection"]["edges"][number]["node"] | null
   >(null);
   const [sortVariable, setSortVariable] = useState<Record<string, string>[]>([

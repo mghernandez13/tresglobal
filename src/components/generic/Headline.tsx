@@ -1,9 +1,11 @@
 import type { PropsWithChildren } from "react";
 
-const Headline = (props: PropsWithChildren) => {
-  const { children } = props;
+const Headline = (props: PropsWithChildren<{ className?: string }>) => {
+  const { className, children } = props;
   return (
-    <h2 className="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">
+    <h2
+      className={`text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight ${className}`}
+    >
       {children}
     </h2>
   );

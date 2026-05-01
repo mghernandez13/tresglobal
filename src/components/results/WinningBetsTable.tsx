@@ -8,7 +8,7 @@ import type {
   BetsQueryData,
   DrawResultsLogsQueryData,
   QueryParamsVariables,
-  BetsTypes,
+  Bets,
 } from "../../types/api";
 import { useParams } from "react-router-dom";
 import Skeleton from "../generic/Skeleton";
@@ -37,7 +37,7 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
 
   // State for view modal
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<BetsTypes | null>(null);
+  const [selectedBet, setSelectedBet] = useState<Bets | null>(null);
 
   const columns = [
     { name: "Details", field: "details" },

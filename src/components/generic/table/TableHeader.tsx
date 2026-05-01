@@ -59,16 +59,16 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
     [],
   );
 
-  const handleCheckboxChange = (role: string) => {
-    tableFilter?.setSelectedFilter((prev) => {
-      const newFilter = prev.includes(role)
-        ? prev.filter((r) => r !== role)
-        : [...prev, role];
-      // Remove page and search params when changing role filter
-      setSearchParams({});
-      return newFilter;
-    });
-  };
+  // const handleCheckboxChange = (role: string) => {
+  //   tableFilter?.setSelectedFilter((prev) => {
+  //     const newFilter = prev.includes(role)
+  //       ? prev.filter((r) => r !== role)
+  //       : [...prev, role];
+  //     // Remove page and search params when changing role filter
+  //     setSearchParams({});
+  //     return newFilter;
+  //   });
+  // };
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickFilterMenu);

@@ -139,11 +139,14 @@ Deno.serve(async (req) => {
               betNumbers.length === 3 &&
               betNumbers[0] === firstThree[0] &&
               betNumbers[1] === firstThree[1] &&
-              betNumbers[2] === firstThree[2];
+              betNumbers[2] === firstThree[2] &&
+              bet.bet_amount <= 25;
             const matchCount = betNumbers.filter((num) =>
               firstThree.includes(num),
             ).length;
-            const isReturnBet = !isSuperJackpot && matchCount === 2;
+            const isReturnBet =
+              !isSuperJackpot && matchCount === 2 && bet.bet_amount >= 50;
+
             if (isSuperJackpot || isReturnBet) {
               if (isSuperJackpot && betPrizeData) {
                 prizeAmount = betPrizeData.super_jackpot

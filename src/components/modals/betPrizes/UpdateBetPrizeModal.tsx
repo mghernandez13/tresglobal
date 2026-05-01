@@ -138,7 +138,7 @@ const UpdateBetPrizeModal: React.FC<UpdateBetPrizeModalProps> = ({
                     if (
                       ["e", "E", "+", "-"].includes(e.key) ||
                       (e.key === "." &&
-                        (superJackpotMultiplier.includes(".") ||
+                        (String(superJackpotMultiplier).includes(".") ||
                           e.currentTarget.selectionStart === 0))
                     ) {
                       e.preventDefault();

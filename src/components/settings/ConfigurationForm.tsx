@@ -6,6 +6,7 @@ import { GET_SETTINGS, UPDATE_SETTING } from "../../graphql/queries/settings";
 import type { SettingsQueryData } from "../../types/api";
 import Swal from "sweetalert2";
 import { betMainConfigs, betTimeConfigs } from "./configs";
+import Loading from "../generic/icons/Loading";
 
 const ConfigurationForm: React.FC = () => {
   const { data } = useQuery<SettingsQueryData>(GET_SETTINGS, {
@@ -227,7 +228,7 @@ const ConfigurationForm: React.FC = () => {
           disabled={loading}
           className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-10 rounded-md transition-all shadow-md active:scale-95 disabled:opacity-60"
         >
-          {loading ? `Saving...` : `Save`}
+          {loading ? <Loading /> : `Save`}
         </button>
       </div>
     </form>

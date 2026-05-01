@@ -3,13 +3,13 @@ import { X } from "lucide-react";
 import Label from "../../generic/Label";
 import Input from "../../generic/Input";
 import { formatTo12h } from "../../../utils/helper";
-import type { BetsTypes } from "../../../types/api";
+import type { Bets } from "../../../types/api";
 import { formatCurrency } from "../../../utils/currency";
 
 interface ViewBetModalProps {
   open: boolean;
   onClose: () => void;
-  bet: BetsTypes | null;
+  bet: Bets | null;
 }
 
 const ViewBetModal: React.FC<ViewBetModalProps> = ({ open, onClose, bet }) => {

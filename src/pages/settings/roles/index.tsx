@@ -4,7 +4,7 @@ import DataTable from "../../../components/generic/table";
 import { useQuery } from "@apollo/client/react";
 import { GET_ROLES } from "../../../graphql/queries/roles";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { use, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ChevronsUpDown,
   ChevronUp,

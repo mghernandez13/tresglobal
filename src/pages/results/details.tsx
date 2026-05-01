@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../db/supabase";
 import Headline from "../../components/generic/Headline";
-import PrimaryLogo from "../../components/logo/PrimaryLogo";
 import AdminTemplate from "../../templates/AdminTemplate";
 import { useParams } from "react-router-dom";
 import { useQuery, useLazyQuery, useMutation } from "@apollo/client/react";

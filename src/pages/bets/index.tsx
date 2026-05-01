@@ -10,7 +10,7 @@ import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
 import { GET_BET_TYPES } from "../../graphql/queries/betTypes";
 import type {
   BetsQueryData,
-  BetsTypes,
+  Bets,
   BetTypesQueryData,
   LottoQueryData,
   QueryParamsVariables,
@@ -33,7 +33,7 @@ const BetsPage: React.FC = () => {
   });
   // View modal state
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<BetsTypes | null>(null);
+  const [selectedBet, setSelectedBet] = useState<Bets | null>(null);
   // Fetch lotto types and bet types for filters
   const { data: lottoTypesData } = useQuery<LottoQueryData>(GET_LOTTO_TYPES, {
     fetchPolicy: "network-only",
