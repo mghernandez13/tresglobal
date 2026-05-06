@@ -278,7 +278,7 @@ const UserActionsDropdown: React.FC<UserActionsDropdownProps> = ({
         <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded shadow-lg z-20 text-sm">
           <ul className="py-1">
             <li
-              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white"
+              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 text-white"
               aria-disabled={isLoading}
               onClick={handleProcessBets}
             >
@@ -287,26 +287,26 @@ const UserActionsDropdown: React.FC<UserActionsDropdownProps> = ({
             <li
               aria-disabled={isLoading}
               onClick={handleDownloadJackpot}
-              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white"
+              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 text-white"
             >
               Download Results - Jackpot
             </li>
             <li
               aria-disabled={isLoading}
               onClick={handleDownloadRB}
-              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white"
+              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 text-white"
             >
               Download Results - RB
             </li>
             <li
               aria-disabled={isLoading}
               onClick={handleDownloadAllResults}
-              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white"
+              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 text-white"
             >
               Download all Results
             </li>
             <li
-              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white"
+              className="px-4 py-2 cursor-pointer transition-colors duration-150 hover:bg-blue-600 text-white"
               onClick={() => setEditModalOpen(true)}
             >
               Edit Winning Combination

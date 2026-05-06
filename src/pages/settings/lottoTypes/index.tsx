@@ -374,7 +374,7 @@ const LottoTypesPage: React.FC = () => {
               <div className="relative flex flex-col items-center group">
                 <button
                   onClick={() => setViewingLottoId(String(item?.node?.id))}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                 >
                   <Eye className="w-5 h-5" />
@@ -391,7 +391,7 @@ const LottoTypesPage: React.FC = () => {
                   onClick={() =>
                     navigate(`/settings/lotto-types/update/${item?.node?.id}`)
                   }
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                 >
                   <SquarePen className="w-5 h-5" />
@@ -405,7 +405,7 @@ const LottoTypesPage: React.FC = () => {
               </div>
               <div className="relative flex flex-col items-center group">
                 <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                   onClick={() => handleDelete(String(item?.node?.id))}
                 >

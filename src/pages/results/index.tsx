@@ -244,6 +244,7 @@ const ResultsPage: React.FC = () => {
           pageSize={pageSize}
           setPageSize={setPageSize}
           onDeleteSelected={() => {}}
+          bulkAction={false}
         />
         {viewModalOpen && (
           <ViewResultModal

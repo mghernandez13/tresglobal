@@ -59,7 +59,7 @@ const Header: React.FC = () => {
               id="toggleSidebar"
               aria-expanded="true"
               aria-controls="sidebar"
-              className="hidden md:inline p-2 mr-3 text-gray-600 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+              className="hidden md:inline p-2 mr-3 text-gray-600 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 bg-transparent"
               onClick={toggleSidebar}
             >
               <svg
@@ -162,7 +162,7 @@ const Header: React.FC = () => {
             <button
               type="button"
               data-dropdown-toggle="notification-dropdown"
-              className="p-2 mr-1 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+              className="p-2 mr-1 text-gray-500 rounded-lg bg-transparent hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
             >
               <span className="sr-only">View notifications</span>
               <svg
@@ -396,7 +396,7 @@ const Header: React.FC = () => {
             <button
               type="button"
               data-dropdown-toggle="apps-dropdown"
-              className="p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+              className="p-2 text-gray-500 rounded-lg bg-transparent hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
             >
               <span className="sr-only">View notifications</span>
               <Moon />

@@ -437,7 +437,7 @@ const BetPrizesPage: React.FC = () => {
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
                 <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                   onClick={() => handleViewPrize(prize)}
                 >
@@ -452,7 +452,7 @@ const BetPrizesPage: React.FC = () => {
               </div>
               <div className="relative flex flex-col items-center group">
                 <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                   onClick={() => handleOpenUpdateModal(prize)}
                 >
@@ -467,7 +467,7 @@ const BetPrizesPage: React.FC = () => {
               </div>
               <div className="relative flex flex-col items-center group">
                 <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
                   onClick={() => handleDeletePrize(prize.id)}
                 >

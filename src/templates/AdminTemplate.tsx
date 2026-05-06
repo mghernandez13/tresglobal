@@ -27,7 +27,7 @@ const AdminTemplate: React.FC<PropsWithChildren> = ({ children }) => {
       <div className="flex w-full h-auto">
         <div className="flex-col w-full h-auto">
           <Header />
-          <section className="flex w-full min-h-screen h-auto">
+          <section className="flex w-full min-h-screen h-auto bg-gray-900">
             <Sidebar className="flex max-w-64 w-1/5 h-auto" />
             <div className="flex w-4/5 sm:mt-4">{children}</div>
           </section>

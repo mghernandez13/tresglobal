@@ -99,7 +99,7 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
                     />
                     <button
                       onClick={toggleMenu}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded bg-transparent"
                       aria-label="More options"
                     >
                       <ChevronDown className="w-4 h-4" />

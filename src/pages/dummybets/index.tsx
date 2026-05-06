@@ -3,6 +3,7 @@ import DataTable from "../../components/generic/table";
 import Headline from "../../components/generic/Headline";
 import { useState, useMemo, useEffect } from "react";
 import UploadDummyBetModal from "../../components/modals/dummyBets/Upload";
+import ViewBetModal from "../../components/modals/bets/ViewBetModal";
 import { GET_AGENTS } from "../../graphql/queries/agents";
 import { useQuery, useApolloClient } from "@apollo/client/react";
 import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
@@ -13,6 +14,7 @@ import { Eye } from "lucide-react";
 import { formatTo12h } from "../../utils/helper";
 import type {
   AgentsQueryData,
+  Bets,
   BetsQueryData,
   BetTypesQueryData,
   BetTypesQueryVariables,
@@ -32,6 +34,8 @@ const DummyBetsPage: React.FC = () => {
     end: "",
   });
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedBet, setSelectedBet] = useState<Bets | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
   const currentPage = Number(searchParams.get("page")) || 1;
@@ -305,9 +309,12 @@ const DummyBetsPage: React.FC = () => {
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
                 <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100 bg-transparent"
                   type="button"
-                  // onClick for view modal can be added here
+                  onClick={() => {
+                    setSelectedBet(item.node);
+                    setViewModalOpen(true);
+                  }}
                 >
                   <Eye className="w-5 h-5" />
                 </button>
@@ -347,6 +354,11 @@ const DummyBetsPage: React.FC = () => {
               filter: betsFilter,
               sortOrder: [],
             }}
+          />
+          <ViewBetModal
+            open={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            bet={selectedBet}
           />
         </div>
         <DataTable

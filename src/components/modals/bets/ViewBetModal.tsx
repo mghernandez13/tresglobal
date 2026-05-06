@@ -22,7 +22,7 @@ const ViewBetModal: React.FC<ViewBetModalProps> = ({ open, onClose, bet }) => {
       />
       <div className="relative bg-[#1f2937] border border-gray-700 w-full max-w-3xl p-8 rounded-lg shadow-2xl z-[70]">
         <button
-          className="absolute top-3 right-3 text-white hover:text-gray-400"
+          className="absolute top-3 right-3 text-white hover:text-gray-400 bg-transparent rounded focus:outline-none"
           onClick={onClose}
         >
           <X className="w-5 h-5" />
