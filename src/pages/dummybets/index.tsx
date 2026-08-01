@@ -418,6 +418,11 @@ const DummyBetsPage: React.FC = () => {
               void fetchBets();
             }}
           />
+          <ViewBetModal
+            open={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            bet={selectedBet}
+          />
         </div>
         <DataTable
           loading={loading}
