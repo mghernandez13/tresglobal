@@ -45,17 +45,18 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
 
   // Reset to page 1 when resultId changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [resultId]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 mt-8 ml-6">
+    <div className="bg-black rounded-lg p-6 mt-8 ml-6">
       <div className="flex items-center justify-between mb-4">
         <div className="font-semibold text-lg text-white">Actions</div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left text-gray-400">
-          <thead className="text-xs uppercase bg-gray-900 text-gray-400">
+          <thead className="text-xs uppercase bg-[#222222] text-gray-400">
             <tr>
               <th className="px-4 py-2 font-semibold">ID</th>
               <th className="px-4 py-2 font-semibold">Name</th>
@@ -76,7 +77,7 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
             ) : logsData?.draw_results_logsCollection?.edges?.length ? (
               logsData.draw_results_logsCollection.edges.map(({ node }) => (
                 <tr key={node.id} className="border-b border-gray-700">
-                  <td className="px-4 py-3 text-blue-400 underline cursor-pointer">
+                  <td className="px-4 py-3 text-yellow-500 underline cursor-pointer">
                     {node.id}
                   </td>
                   <td className="px-4 py-3">{node.name}</td>
@@ -110,7 +111,7 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
                     {new Date(node.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span
+                    {/* <span
                       className="inline-block w-5 h-5 text-gray-400 hover:text-white cursor-pointer"
                       title="View"
                     >
@@ -132,7 +133,7 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
                           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                         ></path>
                       </svg>
-                    </span>
+                    </span> */}
                   </td>
                 </tr>
               ))
@@ -150,7 +151,7 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
       {totalPages > 1 && (
         <div className="flex justify-end items-center gap-2 mt-4">
           <button
-            className="px-3 py-1 rounded bg-gray-700 text-white disabled:opacity-50"
+            className="px-3 py-1 rounded bg-[#222222] hover:bg-[#222910] text-white disabled:opacity-50"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
@@ -160,7 +161,7 @@ const ResultsActionsTable: React.FC<ResultsActionsTableProps> = ({
             Page {page} of {totalPages}
           </span>
           <button
-            className="px-3 py-1 rounded bg-gray-700 text-white disabled:opacity-50"
+            className="px-3 py-1 rounded bg-[#222222] hover:bg-[#222910] text-white disabled:opacity-50"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
           >

@@ -6,13 +6,13 @@ export const GET_BETS = gql`
     $offset: Int!
     $filter: betsBoolExp
     $searchTerm: String
-    $orderBy: [betsOrderBy!]
+    $sortOrder: [betsOrderBy!]
   ) {
     betsCollection(
       first: $first
       offset: $offset
       filter: $filter
-      orderBy: $orderBy
+      orderBy: $sortOrder
     ) {
       edges {
         node {
@@ -62,6 +62,7 @@ export const CREATE_BETS = gql`
     $betTypeId: UUID
     $isDummy: Boolean!
     $agent: UUID!
+    $betStatus: String
     $createdBy: UUID!
   ) {
     insertIntobetsCollection(
@@ -73,6 +74,7 @@ export const CREATE_BETS = gql`
           combination: $combination
           bet_type_id: $betTypeId
           is_dummy_bet: $isDummy
+          bet_status: $betStatus
           agent_id: $agent
           created_by: $createdBy
         }

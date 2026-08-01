@@ -10,6 +10,7 @@ import LottoTypeForm, {
   type LottoFormData,
 } from "../../../components/forms/LottoTypeForm";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import BackButton from "../../../components/generic/buttons/BackButton";
 
 const CreateLottoTypePage: React.FC = () => {
   useCheckUserPermissions("Add Lotto Types");
@@ -19,6 +20,7 @@ const CreateLottoTypePage: React.FC = () => {
   const [formData, setFormData] = useState<LottoFormData>({
     gameType: "",
     drawTime: "",
+    cutoffTime: "",
     name: "",
     daysActive: [],
     isActive: true,
@@ -67,6 +69,7 @@ const CreateLottoTypePage: React.FC = () => {
   };
 
   const handleLogoChange = (url: string) => {
+    console.log("Logo URL changed to:", url);
     setFormData((prev) => ({ ...prev, logo_image: url }));
   };
 
@@ -79,13 +82,14 @@ const CreateLottoTypePage: React.FC = () => {
         variables: {
           gameType: formData.gameType,
           drawTime: formData.drawTime,
+          ...(formData.cutoffTime && { cutoffTime: formData.cutoffTime }),
           name: formData.name,
           daysActive: formData.daysActive,
           isActive: formData.isActive,
           numberOfDigits: formData.numberOfDigits,
           minNumber: formData.minNumber,
           maxNumber: formData.maxNumber,
-          logo_image: formData.logo_image,
+          logoImage: formData.logo_image,
         },
       });
       Swal.fire({
@@ -110,12 +114,9 @@ const CreateLottoTypePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Create Lotto Type</Headline>
         </div>
         <LottoTypeForm

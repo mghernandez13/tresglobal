@@ -15,6 +15,7 @@ import type {
   BetTypesQueryData,
   GetBetTypeQueryVariables,
 } from "../../../types/api";
+import BackButton from "../../../components/generic/buttons/BackButton";
 
 const UpdateBetTypePage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,7 +78,6 @@ const UpdateBetTypePage: React.FC = () => {
           code: formData.code,
           isActive: formData.isActive,
           gameType: formData.gameType,
-          drawTime: formData.drawTime,
         },
       });
       Swal.fire({
@@ -101,12 +101,9 @@ const UpdateBetTypePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Update Bet Type</Headline>
         </div>
         <BetTypeForm

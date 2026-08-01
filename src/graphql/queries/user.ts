@@ -35,6 +35,7 @@ export const GET_USERS = gql`
           email
           permission_id
           is_quota_based
+          remittance_percent
         }
         cursor
       }
@@ -67,6 +68,7 @@ export const GET_UPLINE_LIST = gql`
           full_name
           email
           is_quota_based
+          remittance_percent
           upline
         }
       }
@@ -87,6 +89,7 @@ export const GET_USER = gql`
           permission_id
           avatar_url
           is_quota_based
+          remittance_percent
           upline
           status
         }
@@ -143,6 +146,8 @@ export const UPDATE_USER = gql`
     $isArchive: Boolean
     $avatarUrl: String
     $isQuotaBased: Boolean
+    $permissionId: UUID
+    $remittancePercent: Float
     $upline: UUID
   ) {
     updateprofilesCollection(
@@ -154,6 +159,8 @@ export const UPDATE_USER = gql`
         is_archive: $isArchive
         avatar_url: $avatarUrl
         is_quota_based: $isQuotaBased
+        permission_id: $permissionId
+        remittance_percent: $remittancePercent
         upline: $upline
       }
       filter: { id: { eq: $id } }
@@ -181,6 +188,156 @@ export const BULK_UPDATE_USER_STATUS = gql`
   mutation BulkUpdateUserStatus($userIds: [UUID!]!, $isArchive: Boolean!) {
     update_user_statuses(user_ids: $userIds, new_status: $isArchive) {
       totalCount
+    }
+  }
+`;
+
+export const GET_AGENTS_WITH_BETS = gql`
+  query GetAgentsByUplineWithBets(
+    $first: Int!
+    $offset: Int!
+    $upline: UUID!
+    $searchTerm: String!
+    $filterBets: betsBoolExp
+    $orderByBets: [betsOrderBy!]
+  ) {
+    profilesCollection(
+      first: $first
+      offset: $offset
+      filter: {
+        and: [
+          { is_archive: { eq: false } }
+          { or: [{ upline: { eq: $upline } }, { id: { eq: $upline } }] }
+          {
+            or: [
+              { first_name: { ilike: $searchTerm } }
+              { last_name: { ilike: $searchTerm } }
+              { full_name: { ilike: $searchTerm } }
+            ]
+          }
+        ]
+      }
+    ) {
+      edges {
+        node {
+          id
+          full_name
+          first_name
+          last_name
+          upline
+          remittance_percent
+          betsCollection(filter: $filterBets, orderBy: $orderByBets) {
+            edges {
+              node {
+                id
+                lotto_types {
+                  id
+                  game_type
+                  draw_time
+                  name
+                }
+                bet_types {
+                  id
+                  name
+                  code
+                }
+                profiles {
+                  full_name
+                }
+
+                bet_amount
+                prize_amount
+                combination
+                hit
+                is_dummy_bet
+                bettor_name
+                is_super_jackpot
+                is_return_bet
+                bet_status
+                message
+                created_at
+                completed_at
+              }
+              cursor
+            }
+            totalCount
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ALL_AGENTS_WITH_BETS = gql`
+  query GetAllAgentsWithBets(
+    $first: Int!
+    $offset: Int!
+    $searchTerm: String!
+    $filterBets: betsBoolExp
+    $orderByBets: [betsOrderBy!]
+  ) {
+    profilesCollection(
+      first: $first
+      offset: $offset
+      filter: {
+        and: [
+          { is_archive: { eq: false } }
+          {
+            or: [
+              { first_name: { ilike: $searchTerm } }
+              { last_name: { ilike: $searchTerm } }
+              { full_name: { ilike: $searchTerm } }
+            ]
+          }
+        ]
+      }
+    ) {
+      edges {
+        node {
+          id
+          full_name
+          first_name
+          last_name
+          upline
+          remittance_percent
+          betsCollection(filter: $filterBets, orderBy: $orderByBets) {
+            edges {
+              node {
+                id
+                lotto_types {
+                  id
+                  game_type
+                  draw_time
+                  name
+                }
+                bet_types {
+                  id
+                  name
+                  code
+                }
+                profiles {
+                  full_name
+                }
+
+                bet_amount
+                prize_amount
+                combination
+                hit
+                is_dummy_bet
+                bettor_name
+                is_super_jackpot
+                is_return_bet
+                bet_status
+                message
+                created_at
+                completed_at
+              }
+              cursor
+            }
+            totalCount
+          }
+        }
+      }
     }
   }
 `;

@@ -71,7 +71,7 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
   }, [onDeleteSelected, selectedRows]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+    <div className="bg-black relative shadow-md sm:rounded-lg overflow-hidden">
       <TableHeader
         tableName={tableName}
         tableFilter={tableFilter}
@@ -82,7 +82,7 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
       />
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-[#222910] dark:text-gray-400">
             <tr>
               {bulkAction && (
                 <th scope="col" className="px-4 py-3 relative">
@@ -99,7 +99,7 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
                     />
                     <button
                       onClick={toggleMenu}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded bg-transparent"
                       aria-label="More options"
                     >
                       <ChevronDown className="w-4 h-4" />
@@ -107,11 +107,11 @@ const DataTable: React.FC<TableRecordProps> = (props) => {
                     {menuOpen && (
                       <div
                         ref={menuRef}
-                        className="absolute left-0 mt-8 w-40 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10"
+                        className="absolute left-0 mt-8 w-40 bg-[#222222] border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10"
                       >
                         <button
                           onClick={handleDeleteSelected}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 bg-black text-white"
                         >
                           Delete selected
                         </button>

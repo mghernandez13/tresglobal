@@ -104,7 +104,7 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
               setPageSize(newSize);
               setSearchParams({ search: inputValue, page: "1" });
             }}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 py-2 px-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            className="bg-[#222222] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 py-2 px-1 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -137,7 +137,7 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
                 setSearchChange(true);
                 setInputValue(e.target.value);
               }}
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+              className="bg-[#222222] border border-gray-300 text-white text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:border-gray-600 dark:focus:ring-primary-500 dark:focus:border-primary-500"
               placeholder="Search"
               required
             />
@@ -156,7 +156,7 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
                     data-dropdown-toggle={`filterDropdown-${filter.label}`}
                     onClick={() => toggleShowFilter(filter.label)}
                     ref={filterMenuButtonRef}
-                    className={`w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 ${openFilter === filter.label ? "ring-2 ring-primary-500" : ""}`}
+                    className={`w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-[#222222] rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 ${openFilter === filter.label ? "ring-2 ring-primary-500" : ""}`}
                     type="button"
                   >
                     {filter.label === "Date Filter" ? (
@@ -207,7 +207,7 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
                           minWidth: "12rem",
                           maxWidth: "90vw",
                         }}
-                        className="p-3 bg-white rounded-lg shadow dark:bg-gray-700"
+                        className="p-3 bg-[#222910] rounded-lg shadow"
                       >
                         <h6 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
                           Choose {filter.label}
@@ -244,7 +244,8 @@ const TableHeader: React.FC<TableHeaderProps> = (props) => {
                                   }
                                 />
                                 <label className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {item.name} ({item.count})
+                                  {item.name}
+                                  {/* ({item.count}) */}
                                 </label>
                               </li>
                             ))

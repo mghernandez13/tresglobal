@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronDown } from "lucide-react";
-import { getTimes } from "../../utils/helper";
+// import { getTimes } from "../../utils/helper";
 import Label from "../generic/Label";
 import Input from "../generic/Input";
 import SecondaryButton from "../generic/buttons/Secondary";
@@ -31,12 +31,12 @@ const BetTypeForm: React.FC<BetTypeFormProps> = ({
   loading,
   onCancel,
 }) => {
-  const times = getTimes();
+  // const times = getTimes();
 
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col gap-6">
         <div className="flex w-full gap-4">
@@ -61,7 +61,7 @@ const BetTypeForm: React.FC<BetTypeFormProps> = ({
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2 w-full md:w-1/2">
+          {/* <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Draw Time</Label>
             <div className="relative">
               <select
@@ -83,7 +83,7 @@ const BetTypeForm: React.FC<BetTypeFormProps> = ({
                 <ChevronDown />
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex w-full gap-4">

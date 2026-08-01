@@ -25,6 +25,7 @@ import DummyBetsPage from "./pages/dummybets";
 import ResultsDetailsPage from "./pages/results/details";
 import SummaryPage from "./pages/summary";
 import DashboardPage from "./pages/dashboard";
+import NotificationsPage from "./pages/notifications";
 
 export const router = createBrowserRouter([
   { path: "/", element: <App /> },
@@ -39,6 +40,10 @@ export const router = createBrowserRouter([
   {
     path: "/summary",
     element: <SummaryPage />,
+  },
+  {
+    path: "/notifications",
+    element: <NotificationsPage />,
   },
   {
     path: "/agents",

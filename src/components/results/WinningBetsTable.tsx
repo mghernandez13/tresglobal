@@ -1,25 +1,66 @@
 import type React from "react";
 import Input from "../generic/Input";
-import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { GET_BETS } from "../../graphql/queries/bets";
-import { GET_DRAW_RESULTS_LOGS } from "../../graphql/queries/resultsLogs";
-import type {
-  BetsQueryData,
-  DrawResultsLogsQueryData,
-  QueryParamsVariables,
-  Bets,
-} from "../../types/api";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import type { DrawResultsLogsQueryData, Bets } from "../../types/api";
 import { useParams } from "react-router-dom";
 import Skeleton from "../generic/Skeleton";
 import { formatCurrency } from "../../utils/currency";
 import ViewBetModal from "../modals/bets/ViewBetModal";
+import { supabase } from "../../db/supabase";
+import { Eye, Trash2 } from "lucide-react";
+import Swal from "sweetalert2";
+import IconTableActionButton from "../generic/buttons/IconTableActionButton";
+import { isRambolito3 } from "../../utils/bets";
 
 interface WinningBetsTableProps {
   lottoTypeId: string;
   drawDate: string;
   winningCombination: string;
 }
+
+type WinningBetRow = {
+  id: string;
+  lotto_types: {
+    id: string;
+    game_type: string;
+    draw_time: string;
+    name: string;
+  };
+  bet_types?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  profiles?: {
+    full_name?: string;
+  };
+  bet_amount: number;
+  prize_amount?: number | null;
+  combination: string;
+  hit: boolean;
+  is_dummy_bet: boolean;
+  bettor_name: string;
+  is_super_jackpot: boolean;
+  is_return_bet: boolean;
+  created_at: string;
+};
+
+type WinningBetListItem = Bets;
+
+type WinningBetViewItem = WinningBetListItem & {
+  createdAtLabel: string;
+  combinationLabel: string;
+  winningCombinationLabel: string;
+  hitLabel: string;
+  prizeLabel: string;
+  betLabel: string;
+  agentLabel: string;
+  refIdLabel: string;
+  dummyBetLabel: string;
+  bettorLabel: string;
+  betTypeLabel: string;
+  searchText: string;
+};
 
 const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
   lottoTypeId,
@@ -37,7 +78,14 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
 
   // State for view modal
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<Bets | null>(null);
+  const [selectedBet, setSelectedBet] = useState<WinningBetViewItem | null>(
+    null,
+  );
+  const [allWinningBets, setAllWinningBets] = useState<WinningBetViewItem[]>(
+    [],
+  );
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const columns = [
     { name: "Details", field: "details" },
@@ -46,69 +94,193 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
     { name: "Prize", field: "prize" },
     { name: "Bet", field: "bet" },
     { name: "Agent", field: "agent" },
+    { name: "Actions", field: "actions" },
   ];
 
-  // Query draw results logs for 'Process Bets' for this resultId
-  const { data: logsData } = useQuery<
-    DrawResultsLogsQueryData,
-    QueryParamsVariables
-  >(GET_DRAW_RESULTS_LOGS, {
-    variables: {
-      first: 1,
-      offset: 0,
-      filter: {
-        and: [
-          { draw_result_id: { eq: resultId ? parseInt(resultId) : -1 } },
-          { name: { eq: "PROCESS BETS" } },
-        ],
-      },
-      sortOrder: [{ created_at: "DescNullsLast" }],
-    },
-    skip: !resultId,
-  });
+  const [logsData, setLogsData] = useState<DrawResultsLogsQueryData | null>(
+    null,
+  );
 
-  // Prepare filter for GET_BETS with server-side search
-  const filter = useMemo(() => {
-    const base: Record<string, unknown>[] = [
-      { lotto_type_id: { eq: lottoTypeId } },
-      { hit: { eq: true } },
-      {
-        created_at: {
-          gte: drawDate + "T00:00:00",
-          lte: drawDate + "T23:59:59.999",
-        },
-      },
-    ];
-    if (debouncedSearch && debouncedSearch.trim() !== "") {
-      base.push({
-        or: [
-          { combination: { ilike: `%${debouncedSearch}%` } },
-          { bettor_name: { ilike: `%${debouncedSearch}%` } },
-        ] as Record<string, unknown>[],
+  const normalizeRelation = <T,>(
+    value: T | T[] | null | undefined,
+  ): T | null => {
+    if (Array.isArray(value)) return value[0] ?? null;
+    return value ?? null;
+  };
+
+  const buildWinningBetViewItem = useCallback(
+    (bet: WinningBetListItem): WinningBetViewItem => {
+      const combinationText = bet.combination ?? "";
+      const combinationArr = combinationText.split("-").map(Number);
+      const isTrio =
+        combinationArr.length === 3 &&
+        combinationArr[0] === combinationArr[1] &&
+        combinationArr[1] === combinationArr[2];
+      const bettorName = bet.bettor_name ?? "";
+      const betTypeLabel =
+        bet.bet_types?.name === "Rambolito"
+          ? isRambolito3(combinationArr)
+            ? "Rambolito 3"
+            : "Rambolito 6"
+          : (bet.bet_types?.name ?? "");
+      const hitLabel = bet.hit
+        ? `${bet.is_return_bet ? "RETURN BET" : bet.is_super_jackpot ? "SUPER JACKPOT" : "JACKPOT"} - ${isTrio ? "Trio" : betTypeLabel || "Normal Bet"}`
+        : "-";
+      const prizeLabel = bet.prize_amount
+        ? `PHP ${formatCurrency(bet.prize_amount)}`
+        : "-";
+      const betLabel = `PHP ${bet.bet_amount}`;
+      const agentLabel = bet.profiles?.full_name || "-";
+      const refIdLabel = bet.id;
+      const dummyBetLabel = bet.is_dummy_bet ? "Yes" : "No";
+      const createdAtLabel = new Date(bet.created_at).toLocaleString();
+      const winningCombinationLabel = winningCombination;
+      const searchText = [
+        agentLabel,
+        refIdLabel,
+        prizeLabel,
+        betLabel,
+        combinationText,
+        bettorName,
+        betTypeLabel,
+        bet.bet_types?.code ?? "",
+        hitLabel,
+        `Added By: ${agentLabel}`,
+        `RefID: ${refIdLabel}`,
+        `DummyBet: ${dummyBetLabel}`,
+        `Prize: ${prizeLabel}`,
+        `Bet: ${betLabel} ${betTypeLabel || "Normal Bet"} ${bettorName || "-"}`,
+        `Hit: ${hitLabel}`,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return {
+        ...bet,
+        createdAtLabel,
+        combinationLabel: combinationText,
+        winningCombinationLabel,
+        hitLabel,
+        prizeLabel,
+        betLabel,
+        agentLabel,
+        refIdLabel,
+        dummyBetLabel,
+        bettorLabel: bettorName || "-",
+        betTypeLabel: betTypeLabel || "Normal Bet",
+        searchText,
+      };
+    },
+    [winningCombination],
+  );
+
+  const handleDeleteDummyBet = useCallback(async (betId: string) => {
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "Delete Dummy Bet",
+      text: "Are you sure you want to delete this dummy bet?",
+      showCancelButton: true,
+      reverseButtons: true,
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    const { error } = await supabase
+      .from("bets")
+      .update({ is_archive: true })
+      .eq("id", betId);
+
+    if (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Delete Dummy Bet",
+        text: `Error occurred while deleting: ${error.message}`,
       });
+      return;
     }
-    return { and: base };
-  }, [lottoTypeId, drawDate, debouncedSearch]);
 
-  const { data, loading, error } = useQuery<
-    BetsQueryData,
-    QueryParamsVariables
-  >(GET_BETS, {
-    variables: {
-      first: pageSize,
-      offset: (page - 1) * pageSize,
-      filter,
-      // searchTerm is not used by backend for filtering, so omit or leave as "%"
-      searchTerm: "%",
-      sortOrder: [{ created_at: "DescNullsLast" }],
-    },
-    fetchPolicy: "network-only",
-  });
+    setAllWinningBets((prev) => prev.filter((bet) => bet.id !== betId));
 
-  const winningBets =
-    data?.betsCollection?.edges?.map((edge) => edge.node) || [];
-  const totalCount = data?.betsCollection?.totalCount || 0;
+    Swal.fire({
+      icon: "success",
+      title: "Delete Dummy Bet",
+      text: "Dummy bet successfully deleted!",
+    });
+  }, []);
+
+  const fetchWinningBets = useCallback(async () => {
+    if (!lottoTypeId || !drawDate) return;
+
+    setLoading(true);
+    setLoadError(null);
+
+    const { data, error } = await supabase
+      .from("bets")
+      .select(
+        `
+          id,
+          lotto_types(id, game_type, draw_time, name),
+          bet_types(id, name, code),
+          profiles:agent_id(full_name),
+          bet_amount,
+          prize_amount,
+          combination,
+          hit,
+          is_dummy_bet,
+          bettor_name,
+          is_super_jackpot,
+          is_return_bet,
+          created_at
+        `,
+      )
+      .eq("lotto_type_id", lottoTypeId)
+      .eq("hit", true)
+      .eq("is_archive", false)
+      .gte("created_at", `${drawDate}T00:00:00`)
+      .lte("created_at", `${drawDate}T23:59:59.999`)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setLoadError(error.message);
+      setAllWinningBets([]);
+      setLoading(false);
+      return;
+    }
+
+    const rows = ((data ?? []) as unknown as WinningBetRow[]).map((bet) => ({
+      ...bet,
+      lotto_types: normalizeRelation(bet.lotto_types) ?? {
+        id: lottoTypeId,
+        game_type: "",
+        draw_time: "",
+        name: "",
+      },
+      bet_types: normalizeRelation(bet.bet_types) ?? {
+        id: "",
+        draw_time: "",
+        name: "Normal Bet",
+        code: "",
+      },
+      profiles: normalizeRelation(bet.profiles) ?? { full_name: "-" },
+    })) as WinningBetListItem[];
+
+    setAllWinningBets(rows.map(buildWinningBetViewItem));
+    setLoading(false);
+  }, [buildWinningBetViewItem, drawDate, lottoTypeId]);
+
+  const filteredWinningBets = useMemo(() => {
+    const term = debouncedSearch.trim().toLowerCase();
+    if (!term) return allWinningBets;
+
+    return allWinningBets.filter((bet) => bet.searchText.includes(term));
+  }, [allWinningBets, debouncedSearch]);
+
+  const totalCount = filteredWinningBets.length;
   const totalPages = Math.ceil(totalCount / pageSize);
+  const winningBets = filteredWinningBets.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   // Reset to page 1 when search changes
   useEffect(() => {
@@ -126,6 +298,44 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
   }, [search]);
 
   useEffect(() => {
+    const fetchLogs = async () => {
+      if (!resultId) return;
+
+      const { data } = await supabase
+        .from("draw_results_logs")
+        .select(
+          "id, name, status, created_by, created_at, updated_at, draw_result_id",
+        )
+        .eq("draw_result_id", parseInt(resultId))
+        .eq("name", "PROCESS BETS")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      setLogsData(
+        data && data.length > 0
+          ? ({
+              draw_results_logsCollection: {
+                edges: data.map((node) => ({ node, cursor: String(node.id) })),
+                pageInfo: { hasNextPage: false, endCursor: null },
+                totalCount: data.length,
+              },
+            } as DrawResultsLogsQueryData)
+          : null,
+      );
+    };
+
+    void fetchLogs();
+  }, [resultId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchWinningBets();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchWinningBets]);
+
+  useEffect(() => {
     if (
       logsData?.draw_results_logsCollection?.edges &&
       logsData.draw_results_logsCollection.edges.length > 0
@@ -138,10 +348,10 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
   }, [logsData]);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
+    <div className="bg-black rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="font-semibold text-lg text-white">Winning Bets</div>
-        <div className="w-64">
+        <div className="w-[350px]">
           <Input
             placeholder="Search"
             value={search}
@@ -151,7 +361,7 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left text-gray-400">
-          <thead className="text-xs uppercase bg-gray-800 text-gray-400">
+          <thead className="text-xs uppercase bg-[#222222] text-gray-400">
             <tr>
               {columns.map((col) => (
                 <th key={col.field} className="px-4 py-2 font-semibold">
@@ -167,10 +377,10 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
                   <Skeleton width={"100%"} height={24} />
                 </td>
               </tr>
-            ) : error ? (
+            ) : loadError ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-3 text-red-400">
-                  Error loading bets
+                  {loadError || "Error loading bets"}
                 </td>
               </tr>
             ) : winningBets.length === 0 ? (
@@ -183,7 +393,7 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
               winningBets.map((bet, idx: number) => (
                 <tr
                   key={bet.id || idx}
-                  className="border-b border-gray-700 cursor-pointer hover:bg-gray-700"
+                  className="border-b border-gray-700 cursor-pointer hover:bg-[#222910]"
                   onClick={() => {
                     setSelectedBet(bet);
                     setViewModalOpen(true);
@@ -191,44 +401,72 @@ const WinningBetsTable: React.FC<WinningBetsTableProps> = ({
                 >
                   <td className="px-4 py-3 align-top">
                     <div>
-                      <div>Added By: {bet.profiles?.full_name || "-"}</div>
+                      <div>Added By: {bet.agentLabel}</div>
                       <div className="text-xs text-gray-400">
-                        On: {new Date(bet.created_at).toLocaleString()}
+                        On: {bet.createdAtLabel}
                       </div>
                       <div className="text-xs text-gray-400">
-                        RefID: {bet.id}
+                        RefID: {bet.refIdLabel}
                       </div>
                       <div className="text-xs text-gray-400">
-                        DummyBet: {bet.is_dummy_bet ? "Yes" : "No"}
+                        DummyBet: {bet.dummyBetLabel}
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top font-bold">
-                    {bet.combination}
+                    {bet.combinationLabel}
                     <br />
-                    {winningCombination}
+                    {bet.winningCombinationLabel}
                   </td>
                   <td className="px-4 py-3 align-top font-bold">
-                    {bet.hit
-                      ? `${bet.is_return_bet ? `RETURN BET` : `JACKPOT`} - ${bet.bet_types?.name || "Normal Bet"}`
-                      : "-"}
+                    {bet.hitLabel}
                   </td>
+                  <td className="px-4 py-3 align-top">{bet.prizeLabel}</td>
                   <td className="px-4 py-3 align-top">
-                    {bet.prize_amount
-                      ? `PHP ${formatCurrency(bet.prize_amount)}`
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    PHP {bet.bet_amount}
+                    {bet.betLabel}
                     <br />
-                    <span className="text-xs">
-                      {bet.bet_types?.name || "Normal Bet"}
-                    </span>
+                    <span className="text-xs">{bet.betTypeLabel}</span>
                     <br />
-                    <span className="text-xs">{bet.bettor_name || "-"}</span>
+                    <span className="text-xs">{bet.bettorLabel}</span>
                   </td>
-                  <td className="px-4 py-3 align-top">
-                    {bet.profiles?.full_name || "-"}
+                  <td className="px-4 py-3 align-top">{bet.agentLabel}</td>
+                  <td
+                    className="flex gap-2 px-4 py-3 align-top"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="relative flex flex-col items-center group">
+                      <IconTableActionButton
+                        type="button"
+                        onClick={() => {
+                          setSelectedBet(bet);
+                          setViewModalOpen(true);
+                        }}
+                      >
+                        <Eye className="w-5 h-5" />
+                      </IconTableActionButton>
+                      <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
+                        <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
+                          View
+                        </span>
+                        <div className="w-3 h-3 -mt-2 rotate-45 bg-gray-900"></div>
+                      </div>
+                    </div>
+                    {bet.is_dummy_bet && (
+                      <div className="relative flex flex-col items-center group w-fit">
+                        <IconTableActionButton
+                          type="button"
+                          onClick={() => void handleDeleteDummyBet(bet.id)}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </IconTableActionButton>
+                        <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
+                          <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
+                            Delete
+                          </span>
+                          <div className="w-3 h-3 -mt-2 rotate-45 bg-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))

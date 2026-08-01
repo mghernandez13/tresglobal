@@ -11,11 +11,8 @@ import type {
 } from "../../types/generic";
 import SelectWithSearch from "../generic/SelectWithSearch";
 import { useQuery } from "@apollo/client/react";
-import { GET_UPLINE_LIST } from "../../graphql/queries/user";
 import { GET_ROLES } from "../../graphql/queries/roles";
 import type {
-  GetUplineListVariables,
-  UsersQueryData,
   UserTypes,
   RolesQueryData,
   RolesQueryVariables,
@@ -66,16 +63,6 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
   const [createAnother, setCreateAnother] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { userId } = useParams();
-
-  const { data: uplineListData } = useQuery<
-    UsersQueryData,
-    GetUplineListVariables
-  >(GET_UPLINE_LIST, {
-    variables: {
-      ...(userId && { currentId: userId }),
-    },
-    fetchPolicy: "network-only",
-  });
 
   // New state for local upload feedback
   const [uploading, setUploading] = useState(false);
@@ -193,18 +180,48 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
   };
 
   useEffect(() => {
-    const itemData = uplineListData?.profilesCollection?.edges?.map((item) => ({
-      ...item.node,
-    }));
+    let cancelled = false;
 
-    setUplineList(formatHierarchy(itemData));
-  }, [formatHierarchy, uplineListData?.profilesCollection?.edges]);
+    const loadUplineList = async () => {
+      let query = supabase
+        .from("profiles")
+        .select(
+          "id, first_name, last_name, full_name, email, permission_id, is_quota_based, remittance_percent, upline, status",
+        )
+        .eq("status", true)
+        .eq("is_archive", false)
+        .order("created_at", { ascending: false });
+
+      if (userId) {
+        query = query.neq("id", userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        if (!cancelled) {
+          setUplineList([]);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setUplineList(formatHierarchy((data ?? []) as UserTypes[]));
+      }
+    };
+
+    void loadUplineList();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formatHierarchy, userId]);
 
   return (
     <form
       ref={formRef}
       onSubmit={(e) => handleSubmit(e, createAnother)}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col items-center mb-8 p-4 bg-[#16191d] rounded-lg border border-gray-700">
         <div className="relative w-24 h-24 mb-4">
@@ -273,7 +290,7 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
             name="email"
             value={formData.email}
             onChange={handleFormChange}
-            placeholder="agent@tresdos.com"
+            placeholder="agent@alphabet88.com"
             required
           />
         </div>
@@ -311,7 +328,17 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
             />
           </div>
         </div>
-        <div className="flex flex-col gap-2"></div>
+        <div className="flex flex-col gap-2">
+          <Label>Remittance Percent</Label>
+          <Input
+            type="number"
+            name="remittancePercent"
+            value={formData.remittancePercent ?? ""}
+            onChange={handleFormChange}
+            placeholder="Enter remittance percent"
+            required
+          />
+        </div>
 
         <div className="flex flex-col gap-2 relative">
           <Label>Password</Label>
@@ -375,7 +402,7 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
           </div>
         )}
 
-        <div className="flex gap-2 mt-2">
+        {/* <div className="flex gap-2 mt-2">
           <input
             type="checkbox"
             id="isQuotaBased"
@@ -390,7 +417,7 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
           >
             Is Quota based?
           </label>
-        </div>
+        </div> */}
 
         <div className="flex gap-2 mt-2">
           <input
@@ -431,6 +458,8 @@ const AgentForm: React.FC<AgentFormProps> = (props) => {
         </PrimaryButton>
       </div>
       <ChangePasswordModal
+        userId={String(userId)}
+        userEmail={formData.email}
         isOpen={showChangePasswordModal}
         onClose={toggleChangePasswordModal}
       />

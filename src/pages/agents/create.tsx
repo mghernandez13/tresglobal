@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import AgentForm from "../../components/forms/AgentForm";
 import type { AgentFormDataProps } from "../../types/generic";
 import { useCheckUserPermissions } from "../../hooks/useCheckUserPermission";
+import BackButton from "../../components/generic/buttons/BackButton";
 
 const CreateAgentPage: React.FC = () => {
   useCheckUserPermissions("Add Agents");
@@ -23,6 +24,7 @@ const CreateAgentPage: React.FC = () => {
     permissionId: null,
     avatarUrl: "",
     isQuotaBased: false,
+    remittancePercent: 60,
     isActive: true,
     upline: null,
   });
@@ -101,12 +103,9 @@ const CreateAgentPage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Create Agent</Headline>
         </div>
         <AgentForm

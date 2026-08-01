@@ -24,6 +24,8 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
     permissionId: "",
     roleName: "-",
     avatarUrl: "",
+    remittancePercent: "",
+    incomePercent: "",
     isQuotaBased: false,
     isActive: true,
   });
@@ -49,6 +51,8 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
 
   useEffect(() => {
     const node = data?.profilesCollection.edges[0].node;
+    const remittancePercent = node?.remittance_percent ?? 60;
+    const incomePercent = 100 - remittancePercent;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData((prev) => ({
       ...prev,
@@ -57,6 +61,8 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
       email: String(node?.email),
       permissionId: node?.permission_id ?? "",
       avatarUrl: String(node?.avatar_url),
+      remittancePercent: String(remittancePercent),
+      incomePercent: String(incomePercent),
       isQuotaBased: Boolean(node?.is_quota_based),
       isActive: Boolean(node?.status),
     }));
@@ -136,7 +142,7 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
               damping: 25,
               mass: 0.8,
             }}
-            className="relative bg-[#1f2937] border border-gray-700 w-full max-w-2xl p-8 rounded-lg shadow-2xl z-[70]"
+            className="themed-scrollbar relative bg-black border border-gray-700 w-full max-w-2xl p-8 rounded-lg shadow-2xl z-[70] max-h-[90vh] overflow-y-auto"
           >
             <div>
               <button
@@ -220,7 +226,7 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
                     <Input
                       type="text"
                       name="remitPercent"
-                      value={""}
+                      value={formData.remittancePercent}
                       disabled={true}
                       placeholder=""
                       required
@@ -231,7 +237,7 @@ const ViewAgentModal: React.FC<ViewAgentModalProps> = (props) => {
                     <Input
                       type="text"
                       name="incomePercent"
-                      value={""}
+                      value={formData.incomePercent}
                       disabled={true}
                       placeholder=""
                       required

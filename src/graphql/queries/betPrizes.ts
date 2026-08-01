@@ -22,6 +22,10 @@ export const GET_BET_PRIZES = gql`
             draw_time
             name
           }
+          bet_types {
+            id
+            name
+          }
           bet_amount
           prize
           is_active
@@ -42,6 +46,7 @@ export const GET_BET_PRIZES = gql`
 export const CREATE_BET_PRIZE = gql`
   mutation CreateBetPrize(
     $lottoTypeId: UUID!
+    $betTypeId: UUID
     $betAmount: Number!
     $prize: Number!
     $isActive: Boolean!
@@ -52,6 +57,7 @@ export const CREATE_BET_PRIZE = gql`
       objects: [
         {
           lotto_type_id: $lottoTypeId
+          bet_type_id: $betTypeId
           bet_amount: $betAmount
           prize: $prize
           is_active: $isActive
@@ -70,6 +76,7 @@ export const CREATE_BET_PRIZE = gql`
 export const UPDATE_BET_PRIZE = gql`
   mutation UpdateBetPrize(
     $id: UUID!
+    $betTypeId: UUID
     $betAmount: Number
     $prize: Number
     $superJackpot: Boolean
@@ -79,6 +86,7 @@ export const UPDATE_BET_PRIZE = gql`
   ) {
     updatebet_prizesCollection(
       set: {
+        bet_type_id: $betTypeId
         is_archive: $isArchive
         bet_amount: $betAmount
         prize: $prize

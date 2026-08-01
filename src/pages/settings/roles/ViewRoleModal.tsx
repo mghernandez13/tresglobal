@@ -39,7 +39,7 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div
         ref={modalRef}
-        className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl w-full max-w-xl"
+        className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl w-full max-w-xl"
         style={{
           maxHeight: "90vh",
           overflowY: "auto",

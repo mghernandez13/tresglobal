@@ -1,8 +1,8 @@
 import { HttpLink } from "@apollo/client";
 import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { ApolloProvider } from "@apollo/client/react";
 import { SetContextLink } from "@apollo/client/link/context";
 import { UserAuth } from "../components/context/AuthContext";
-import { ApolloProvider } from "@apollo/client/react";
 
 const graphqlEndpoint = `${import.meta.env.VITE_SUPABASE_URL}/graphql/v1`;
 const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

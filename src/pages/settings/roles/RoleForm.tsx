@@ -66,7 +66,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2 w-full md:w-1/2">

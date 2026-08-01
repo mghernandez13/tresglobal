@@ -20,14 +20,14 @@ interface ViewLottoTypeModalProps extends ModalProps {
 const ViewLottoTypeModal: React.FC<ViewLottoTypeModalProps> = (props) => {
   const { isOpen, onClose, lottoTypeId } = props;
 
-  const { data } = useQuery<LottoQueryData, GetLottoTypeQueryVariables>(
-    GET_LOTTO_TYPE,
-    {
-      variables: {
-        lottoTypeId: String(lottoTypeId),
-      },
+  const { data, loading } = useQuery<
+    LottoQueryData,
+    GetLottoTypeQueryVariables
+  >(GET_LOTTO_TYPE, {
+    variables: {
+      lottoTypeId: String(lottoTypeId),
     },
-  );
+  });
 
   const [formData, setFormData] = useState({
     gameType: "",
@@ -38,11 +38,13 @@ const ViewLottoTypeModal: React.FC<ViewLottoTypeModalProps> = (props) => {
     numberOfDigits: 0,
     minNumber: 0,
     maxNumber: 0,
+    logoImage: "",
   });
 
   useEffect(() => {
     const node = data?.lotto_typesCollection?.edges?.[0]?.node;
     if (node) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         gameType: String(node.game_type || ""),
         drawTime: node.draw_time ? formatTo12h(node.draw_time) : "",
@@ -52,6 +54,7 @@ const ViewLottoTypeModal: React.FC<ViewLottoTypeModalProps> = (props) => {
         numberOfDigits: Number(node.number_of_digits || 0),
         minNumber: Number(node.min_number || 0),
         maxNumber: Number(node.max_number || 0),
+        logoImage: String(node.logo_image || ""),
       });
     }
   }, [data]);
@@ -78,7 +81,7 @@ const ViewLottoTypeModal: React.FC<ViewLottoTypeModalProps> = (props) => {
               damping: 25,
               mass: 0.8,
             }}
-            className="relative bg-[#1f2937] border border-gray-700 w-full max-w-2xl p-8 rounded-lg shadow-2xl z-[70]"
+            className="relative bg-black border border-gray-700 w-full max-w-2xl p-8 rounded-lg shadow-2xl z-[70]"
           >
             <div>
               <button
@@ -93,6 +96,18 @@ const ViewLottoTypeModal: React.FC<ViewLottoTypeModalProps> = (props) => {
               </h2>
 
               <div className="flex flex-col gap-6">
+                <div className="flex w-full justify-center gap-5">
+                  {!loading && (
+                    <img
+                      src={
+                        formData.logoImage ||
+                        "https://lnnpmtjuzgrcdtusfrty.supabase.co/storage/v1/object/public/app/images/noPicture.png"
+                      }
+                      alt="Lotto Logo"
+                      className="w-24 h-24 object-contain"
+                    />
+                  )}
+                </div>
                 <div className="flex w-full gap-5">
                   <div className="flex flex-col gap-2 w-full md:w-1/2">
                     <Label>Game Type</Label>

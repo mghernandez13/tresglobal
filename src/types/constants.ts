@@ -59,9 +59,12 @@ export const ADMIN_PERMISSIONS = [
 
 export const USER_PERMISSIONS = [
   "Bet Entry",
-  "View Reports",
-  "Update Reports",
+  "Dummy Bet Entry",
+  "Daily Agent Report",
+  "Agent Sales Report",
   "Queues",
+  "Ranking",
+  "Agent Logs",
 ];
 
 export const GAME_TYPES = ["2D", "3D", "LP3"];

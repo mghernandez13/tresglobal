@@ -22,12 +22,12 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 import type { SortDirection } from "../../../types/constants";
-import { formatTo12h } from "../../../utils/helper";
 import type {
   BetTypesQueryData,
   BetTypesQueryVariables,
 } from "../../../types/api";
 import PrimaryButton from "../../../components/generic/buttons/Primary";
+import IconTableActionButton from "../../../components/generic/buttons/IconTableActionButton";
 
 const BetTypesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,13 +134,6 @@ const BetTypesPage: React.FC = () => {
     [sortConfig.column, sortConfig.direction],
   );
 
-  useEffect(() => {
-    // synchronize sort variable for query. using effect so that variable updates
-    // when sortConfig changes. eslint rule disabled in other pages as well.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSortVariable([{ [sortConfig.column]: sortConfig.direction }]);
-  }, [sortConfig]);
-
   const handleDelete = useCallback(
     (id: string) => {
       Swal.fire({
@@ -245,7 +238,7 @@ const BetTypesPage: React.FC = () => {
               <ChevronsUpDown className="absolute left-24 top-4 w-4 h-4" />
             )}
           </th>
-          <th
+          {/* <th
             scope="col"
             onClick={() => handleSort("draw_time")}
             className="relative px-4 py-3 cursor-pointer"
@@ -260,7 +253,7 @@ const BetTypesPage: React.FC = () => {
             ) : (
               <ChevronsUpDown className="absolute left-24 top-4 w-4 h-4" />
             )}
-          </th>
+          </th> */}
           <th
             scope="col"
             onClick={() => handleSort("name")}
@@ -306,13 +299,13 @@ const BetTypesPage: React.FC = () => {
       data?.bet_typesCollection?.edges?.map((item) => {
         return {
           gameType: item.node.game_type || "",
-          drawTime: item.node.draw_time ? formatTo12h(item.node.draw_time) : "",
+          // drawTime: item.node.draw_time ? formatTo12h(item.node.draw_time) : "",
           name: item.node.name,
           code: item.node.code,
           active: item?.node?.is_active ? (
             <div className="flex items-center">
-              <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-green-500" />
+              <div className="w-5 h-5 rounded-full border-2 border-yellow-500 flex items-center justify-center">
+                <Check className="w-3 h-3 text-yellow-500" />
               </div>
             </div>
           ) : (
@@ -325,13 +318,12 @@ const BetTypesPage: React.FC = () => {
           action: (
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   onClick={() => toggleViewModal(String(item.node.id))}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                   type="button"
                 >
                   <Eye className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     View
@@ -340,15 +332,14 @@ const BetTypesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   onClick={() =>
                     navigate(`/settings/bet-types/update/${item.node.id}`)
                   }
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                   type="button"
                 >
                   <SquarePen className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Edit
@@ -357,13 +348,12 @@ const BetTypesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   type="button"
                   onClick={() => handleDelete(String(item.node.id))}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                 >
                   <Trash2 className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Delete
@@ -401,10 +391,20 @@ const BetTypesPage: React.FC = () => {
     },
   };
 
-  // reset pagination when filter changes
   useEffect(() => {
-    setSearchParams({ search: searchQuery, page: "1" });
-  }, [searchQuery, selectedGameTypes, setSearchParams]);
+    // synchronize sort variable for query. using effect so that variable updates
+    // when sortConfig changes. eslint rule disabled in other pages as well.
+    setSortVariable([{ [sortConfig.column]: sortConfig.direction }]);
+  }, [sortConfig]);
+
+  // reset pagination only when game type filter changes
+  useEffect(() => {
+    setSearchParams({
+      ...(searchQuery && { search: searchQuery }),
+      page: "1",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGameTypes]);
 
   const totalCount = data?.bet_typesCollection?.totalCount ?? 0;
 

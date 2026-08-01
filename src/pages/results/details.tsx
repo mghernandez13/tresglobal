@@ -49,6 +49,7 @@ const ResultsDetailsPage: React.FC = () => {
         searchTerm: "",
       },
       skip: !resultId,
+      fetchPolicy: "cache-and-network",
     },
   );
 
@@ -75,90 +76,106 @@ const ResultsDetailsPage: React.FC = () => {
   const jackpotWinners = jackpotData?.betsCollection?.totalCount ?? 0;
   const rbWinners = rbData?.betsCollection?.totalCount ?? 0;
 
-  const handleInvokeProcessBets = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke(
-      "enqueue-process-bets",
-      {
-        body: {
-          resultId: resultId ? parseInt(resultId) : undefined,
-          lottoTypeId: lottoTypeId ? parseInt(lottoTypeId) : undefined,
-          resultDrawDate,
-          combination,
-          createdBy: userId,
+  const handleInvokeProcessBets = useCallback(
+    async (newCombination?: string) => {
+      const { data, error } = await supabase.functions.invoke(
+        "enqueue-process-bets",
+        {
+          body: {
+            resultId: resultId ? parseInt(resultId) : undefined,
+            lottoTypeId: lottoTypeId ? parseInt(lottoTypeId) : undefined,
+            resultDrawDate,
+            combination: newCombination ?? combination,
+            createdBy: userId,
+          },
         },
-      },
-    );
+      );
 
-    if (error) {
-      throw new Error(`Error invoking process bets function: ${error.message}`);
-    }
+      if (error) {
+        throw new Error(
+          `Error invoking process bets function: ${error.message}`,
+        );
+      }
 
-    if (data?.success) {
-      Swal.fire({
-        icon: "success",
-        title: "Process Bets",
-        text: `Bets processed successfully!`,
-      });
-    } else {
-      Swal.fire({
-        icon: "info",
-        title: "Process Bets",
-        text: data?.error || "No bets were processed.",
-      });
-    }
-  }, [combination, lottoTypeId, resultDrawDate, resultId, userId]);
+      if (data?.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Process Bets",
+          text: `Bets processed successfully!`,
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Process Bets",
+          text: data?.error || "No bets were processed.",
+        });
+      }
+    },
+    [combination, lottoTypeId, resultDrawDate, resultId, userId],
+  );
 
-  const handleProcessBets = useCallback(async () => {
-    setIsLoading(true);
-    if (!lottoTypeId || !resultDrawDate || !combination) {
-      Swal.fire({
-        icon: "error",
-        title: "Process Bets",
-        text: "Missing lotto type, draw date, or winning combination. Cannot process bets.",
-      });
-      setIsLoading(false);
-      return;
-    }
+  const handleProcessBets = useCallback(
+    async (newCombination?: string) => {
+      const safeCombination =
+        typeof newCombination === "string" ? newCombination : undefined;
 
-    try {
-      await createResultLog({
-        variables: {
-          name: `PROCESS BETS`,
-          status: "STARTED",
-          created_by: userId, // Replace with actual user ID
-          draw_result_id: resultId,
-        },
-      });
+      setIsLoading(true);
+      if (
+        !lottoTypeId ||
+        !resultDrawDate ||
+        !(safeCombination ?? combination)
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Process Bets",
+          text: "Missing lotto type, draw date, or winning combination. Cannot process bets.",
+        });
+        setIsLoading(false);
+        return;
+      }
 
-      await handleInvokeProcessBets();
-    } catch (err: unknown) {
-      await createResultLog({
-        variables: {
-          name: `PROCESS BETS`,
-          status: "FAILED",
-          created_by: userId, // Replace with actual user ID
-          draw_result_id: resultId,
-        },
-      });
-      const errorMsg =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      Swal.fire({
-        icon: "error",
-        title: "Process Bets",
-        text: errorMsg,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    lottoTypeId,
-    resultDrawDate,
-    combination,
-    createResultLog,
-    userId,
-    resultId,
-    handleInvokeProcessBets,
-  ]);
+      try {
+        await createResultLog({
+          variables: {
+            name: `PROCESS BETS`,
+            status: "STARTED",
+            created_by: userId, // Replace with actual user ID
+            draw_result_id: resultId,
+          },
+        });
+
+        await handleInvokeProcessBets(safeCombination);
+      } catch (err: unknown) {
+        await createResultLog({
+          variables: {
+            name: `PROCESS BETS`,
+            status: "FAILED",
+            created_by: userId, // Replace with actual user ID
+            draw_result_id: resultId,
+          },
+        });
+        const errorMsg =
+          err instanceof Error ? err.message : "An unexpected error occurred.";
+
+        Swal.fire({
+          icon: "error",
+          title: "Process Bets",
+          text: errorMsg,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      lottoTypeId,
+      resultDrawDate,
+      combination,
+      createResultLog,
+      userId,
+      resultId,
+      handleInvokeProcessBets,
+    ],
+  );
 
   // Fetch all bets for the result (for total bets)
   useEffect(() => {
@@ -173,6 +190,10 @@ const ResultsDetailsPage: React.FC = () => {
                   gte: resultDrawDate + "T00:00:00",
                   lte: resultDrawDate + "T23:59:59.999",
                 },
+              },
+              {
+                bet_status: { eq: "completed" },
+                is_archive: { eq: false },
               },
             ],
           },
@@ -198,6 +219,12 @@ const ResultsDetailsPage: React.FC = () => {
               },
               { hit: { eq: true } },
               { is_return_bet: { eq: false } },
+              {
+                bet_status: { eq: "completed" },
+              },
+              {
+                is_archive: { eq: false },
+              },
             ],
           },
           searchTerm: "%",
@@ -217,6 +244,10 @@ const ResultsDetailsPage: React.FC = () => {
               },
               { hit: { eq: true } },
               { is_return_bet: { eq: true } },
+              { is_archive: { eq: false } },
+              {
+                bet_status: { eq: "completed" },
+              },
             ],
           },
           searchTerm: "%",
@@ -236,7 +267,7 @@ const ResultsDetailsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-6 gap-4">
             <div className="flex items-center gap-3">
               <button
-                className="bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-700 flex items-center"
+                className="bg-black text-white px-3 py-2 rounded hover:bg-gray-900 flex items-center"
                 onClick={() => window.history.back()}
                 aria-label="Back"
               >
@@ -266,6 +297,8 @@ const ResultsDetailsPage: React.FC = () => {
               resultId={resultNode?.id}
               lottoTypeId={resultNode?.lotto_types?.id}
               resultDrawDate={resultNode?.draw_date}
+              winningCombination={resultNode?.combination}
+              logoImageSrc={logoImage}
               userId={userId}
               setEditModalOpen={setEditModalOpen}
               handleProcessBets={handleProcessBets}
@@ -273,7 +306,7 @@ const ResultsDetailsPage: React.FC = () => {
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-800 rounded-lg p-6 mb-8 text-white">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-black rounded-lg p-6 mb-8 text-white">
             <div>
               <div className="text-xs text-gray-400">Draw Date</div>
               <div className="py-1">
@@ -332,9 +365,9 @@ const ResultsDetailsPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center">
-              <a href="#" className="text-blue-400 hover:underline">
+              {/* <a href="#" className="text-blue-400 hover:underline">
                 View Summary &gt;&gt;
-              </a>
+              </a> */}
             </div>
           </div>
 
@@ -360,7 +393,7 @@ const ResultsDetailsPage: React.FC = () => {
         numberOfDigits={resultNode?.lotto_types?.number_of_digits ?? 6}
         minNumber={resultNode?.lotto_types?.min_number}
         maxNumber={resultNode?.lotto_types?.max_number}
-        onSuccess={async () => await handleProcessBets()}
+        onSuccess={handleProcessBets}
       />
     </AdminTemplate>
   );

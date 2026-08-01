@@ -158,7 +158,7 @@ const ResultsPage: React.FC = () => {
           >
             Combination
           </th>
-          <th scope="col" className="px-4 py-3">
+          <th scope="col" className="px-4 py-3 text-right">
             Actions
           </th>
         </>
@@ -177,10 +177,9 @@ const ResultsPage: React.FC = () => {
   const tableData = useMemo(() => {
     return (data?.draw_resultsCollection?.edges || []).map(({ node }) => {
       if (!node) return {};
-      const drawTypeKey = String(node.draw_type);
       return {
         draw_date: formatDrawDate(node.draw_date ?? ""),
-        draw_type: lottoTypeMap[drawTypeKey] || node.draw_type,
+        draw_type: node.lotto_types?.name ?? "",
         combination: node.combination,
         action: (
           <td className="flex gap-2 px-4 py-3 items-center justify-end">
@@ -243,6 +242,7 @@ const ResultsPage: React.FC = () => {
           }
           pageSize={pageSize}
           setPageSize={setPageSize}
+          bulkAction={false}
           onDeleteSelected={() => {}}
         />
         {viewModalOpen && (

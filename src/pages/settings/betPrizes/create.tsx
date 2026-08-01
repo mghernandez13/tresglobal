@@ -3,40 +3,59 @@ import { useNavigate } from "react-router-dom";
 import Headline from "../../../components/generic/Headline";
 import AdminTemplate from "../../../templates/AdminTemplate";
 import { ArrowLeft } from "lucide-react";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { CREATE_BET_PRIZE } from "../../../graphql/queries/betPrizes";
-import { GET_LOTTO_TYPES } from "../../../graphql/queries/lotto";
 import Swal from "sweetalert2";
 import BetPrizeForm, {
   type BetPrizeFormData,
+  type LottoTypeOption,
 } from "../../../components/forms/BetPrizeForm";
-import type { LottoQueryData, LottoQueryVariables } from "../../../types/api";
+import { supabase } from "../../../db/supabase";
+import { useEffect } from "react";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import BackButton from "../../../components/generic/buttons/BackButton";
+
+type LottoTypeSupabaseRow = {
+  id: string | number;
+  name: string;
+  game_type: string;
+  draw_time: string;
+};
 
 const CreateBetPrizePage: React.FC = () => {
   useCheckUserPermissions("Add Bet Prizes");
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [lottoTypes, setLottoTypes] = useState<LottoTypeOption[]>([]);
   const [formData, setFormData] = useState<BetPrizeFormData>({
     lottoTypeId: "",
+    betTypeId: "",
     betAmount: "",
     prize: "",
     isActive: true,
   });
 
-  const { data: lottoData } = useQuery<LottoQueryData, LottoQueryVariables>(
-    GET_LOTTO_TYPES,
-    {
-      variables: {
-        first: 100,
-        offset: 0,
-        searchTerm: "%",
-        filter: { and: [{ is_archive: { eq: false } }] },
-        sortOrder: [{ name: "AscNullsFirst" }],
-      },
-    },
-  );
+  useEffect(() => {
+    const fetchLottoTypes = async () => {
+      const { data } = await supabase
+        .from("lotto_types")
+        .select("id, name, game_type, draw_time")
+        .eq("is_archive", false)
+        .order("name", { ascending: true, nullsFirst: true });
+
+      setLottoTypes(
+        ((data ?? []) as LottoTypeSupabaseRow[]).map((item) => ({
+          id: String(item.id),
+          name: item.name,
+          gameType: item.game_type,
+          drawTime: item.draw_time,
+        })),
+      );
+    };
+
+    void fetchLottoTypes();
+  }, []);
 
   const [createBetPrize] = useMutation(CREATE_BET_PRIZE);
 
@@ -60,7 +79,7 @@ const CreateBetPrizePage: React.FC = () => {
       return;
     }
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value, betTypeId: "" }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +90,7 @@ const CreateBetPrizePage: React.FC = () => {
       await createBetPrize({
         variables: {
           lottoTypeId: formData.lottoTypeId,
+          ...(formData.betTypeId && { betTypeId: formData.betTypeId }),
           betAmount: Number(formData.betAmount),
           prize: Number(formData.prize),
           superJackpot: formData.super_jackpot,
@@ -100,26 +120,14 @@ const CreateBetPrizePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Create Bet Prize</Headline>
         </div>
         <BetPrizeForm
           formData={formData}
-          lottoTypes={
-            lottoData?.lotto_typesCollection?.edges
-              ?.map((e) => ({
-                id: e.node?.id ?? "",
-                name: e.node?.name ?? "",
-                gameType: e.node?.game_type ?? "",
-                drawTime: e.node?.draw_time ?? "",
-              }))
-              .filter((item) => item.id !== "") ?? []
-          }
+          lottoTypes={lottoTypes}
           onChange={handleChange}
           onSubmit={handleSubmit}
           loading={loading}

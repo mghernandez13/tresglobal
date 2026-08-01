@@ -1,26 +1,53 @@
 import AdminTemplate from "../../templates/AdminTemplate";
 import DataTable from "../../components/generic/table";
 import Headline from "../../components/generic/Headline";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
-import { GET_BETS } from "../../graphql/queries/bets";
-import { GET_USERS } from "../../graphql/queries/user";
 import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
 import { GET_BET_TYPES } from "../../graphql/queries/betTypes";
-import type {
-  BetsQueryData,
-  Bets,
-  BetTypesQueryData,
-  LottoQueryData,
-  QueryParamsVariables,
-  UsersQueryData,
-  UsersQueryVariables,
-} from "../../types/api";
+import type { Bets, BetTypesQueryData, LottoQueryData } from "../../types/api";
 import { Eye } from "lucide-react";
 import ViewBetModal from "../../components/modals/bets/ViewBetModal";
 import { formatTo12h } from "../../utils/helper";
 import { formatCurrency } from "../../utils/currency";
+import IconTableActionButton from "../../components/generic/buttons/IconTableActionButton";
+import { supabase } from "../../db/supabase";
+
+type BetRelation<T> = T | T[] | null;
+
+type BetSupabaseRow = {
+  id: string;
+  lotto_types: BetRelation<{
+    id: string;
+    name: string;
+    draw_time: string;
+    game_type: string;
+  }>;
+  bet_types: BetRelation<{
+    id: string;
+    draw_time: string;
+    name: string;
+    code: string;
+  }>;
+  profiles: BetRelation<{
+    full_name: string;
+  }>;
+  bet_amount: number;
+  combination: string;
+  hit: boolean;
+  prize_amount: number;
+  bettor_name: string;
+  is_super_jackpot: boolean;
+  is_return_bet: boolean;
+  created_at: string;
+  is_dummy_bet: boolean;
+};
+
+type TableError = {
+  name: string;
+  message: string;
+};
 
 const BetsPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(5);
@@ -34,11 +61,24 @@ const BetsPage: React.FC = () => {
   // View modal state
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedBet, setSelectedBet] = useState<Bets | null>(null);
+  const [allBets, setAllBets] = useState<Bets[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<TableError | null>(null);
   // Fetch lotto types and bet types for filters
   const { data: lottoTypesData } = useQuery<LottoQueryData>(GET_LOTTO_TYPES, {
+    variables: {
+      filter: {
+        and: [{ is_archive: { eq: false } }, { is_active: { eq: true } }],
+      },
+    },
     fetchPolicy: "network-only",
   });
   const { data: betTypesData } = useQuery<BetTypesQueryData>(GET_BET_TYPES, {
+    variables: {
+      filter: {
+        and: [{ is_archive: { eq: false } }, { is_active: { eq: true } }],
+      },
+    },
     fetchPolicy: "network-only",
   });
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,85 +86,130 @@ const BetsPage: React.FC = () => {
   const currentPage = Number(searchParams.get("page")) || 1;
   const offset = (currentPage - 1) * pageSize;
 
-  // 1. Search users by name/email if searchQuery is present
-  const { data: usersData } = useQuery<UsersQueryData, UsersQueryVariables>(
-    GET_USERS,
-    {
-      variables: {
-        first: 10,
-        offset: 0,
-        searchTerm: searchQuery ? `%${searchQuery}%` : "%",
-        sortOrder: [],
-      },
-      skip: !searchQuery,
-      fetchPolicy: "network-only",
-    },
-  );
-
-  // 2. Extract matching user IDs
-  const matchingUserIds =
-    usersData?.profilesCollection?.edges?.map((edge) => edge.node.id) || [];
-
-  // 3. Compose filter for GET_BETS
-  const betsFilter: Record<string, Record<string, unknown>[]> = {
-    and: [
-      {
-        or: [
-          ...(searchQuery && matchingUserIds.length > 0
-            ? [{ agent_id: { in: matchingUserIds } }]
-            : []),
-          ...(searchQuery
-            ? [
-                { combination: { ilike: `%${searchQuery}%` } },
-                { id: { eq: searchQuery } },
-              ]
-            : []),
-        ],
-      },
-      ...(selectedLottoTypes.length > 0
-        ? [{ lotto_type_id: { in: selectedLottoTypes } }]
-        : []),
-      ...(selectedBetTypes.length > 0
-        ? [{ bet_type_id: { in: selectedBetTypes } }]
-        : []),
-      ...(dateRange.start && dateRange.end
-        ? [
-            {
-              created_at: {
-                gte: dateRange.start,
-                lte: dateRange.end + "T23:59:59.999",
-              },
-            },
-          ]
-        : []),
-      { is_archive: { eq: false } },
-    ],
+  const normalizeRelation = <T,>(value: BetRelation<T>): T | null => {
+    if (Array.isArray(value)) return value[0] ?? null;
+    return value ?? null;
   };
 
-  // If searching and no user matches and no combination search, return no results
-  if (
-    searchQuery &&
-    matchingUserIds.length === 0 &&
-    !searchQuery // This will never be true, so skip this block
-  ) {
-    betsFilter.and.unshift({ agent_id: { eq: "__NO_MATCH__" } });
-  }
+  const fetchBets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  // 4. Query bets
-  const { data, loading, error } = useQuery<
-    BetsQueryData,
-    QueryParamsVariables
-  >(GET_BETS, {
-    variables: {
-      first: pageSize,
-      offset,
-      searchTerm: searchQuery ? `%${searchQuery}%` : "%",
-      filter: betsFilter,
-      sortOrder: [],
-    },
-    notifyOnNetworkStatusChange: true,
-    fetchPolicy: "network-only",
-  });
+    let query = supabase
+      .from("bets")
+      .select(
+        `
+          id,
+          lotto_types!inner(id, name, draw_time, game_type),
+          bet_types(id, draw_time, name, code),
+          profiles:agent_id(full_name),
+          bet_amount,
+          combination,
+          hit,
+          prize_amount,
+          bettor_name,
+          is_super_jackpot,
+          is_return_bet,
+          created_at,
+          is_dummy_bet
+        `,
+      )
+      .eq("is_archive", false)
+      .eq("is_dummy_bet", false)
+      .eq("bet_status", "completed")
+      .order("created_at", { ascending: false });
+
+    if (selectedLottoTypes.length > 0) {
+      query = query.in("lotto_type_id", selectedLottoTypes);
+    }
+
+    if (selectedBetTypes.length > 0) {
+      query = query.in("bet_type_id", selectedBetTypes);
+    }
+
+    if (dateRange.start && dateRange.end) {
+      query = query
+        .gte("created_at", dateRange.start)
+        .lte("created_at", `${dateRange.end}T23:59:59.999`);
+    }
+
+    const { data, error: listError } = await query;
+
+    if (listError) {
+      setAllBets([]);
+      setError({ name: "SupabaseError", message: listError.message });
+      setLoading(false);
+      return;
+    }
+
+    const rows = ((data ?? []) as BetSupabaseRow[]).map((row) => ({
+      id: row.id,
+      lotto_types: normalizeRelation(row.lotto_types) ?? {
+        id: "",
+        name: "",
+        draw_time: "",
+        game_type: "",
+      },
+      bet_types: normalizeRelation(row.bet_types) ?? {
+        id: "",
+        draw_time: "",
+        name: "Normal Bet",
+        code: "",
+      },
+      profiles: normalizeRelation(row.profiles) ?? {
+        full_name: "-",
+      },
+      bet_amount: row.bet_amount,
+      combination: row.combination,
+      hit: row.hit,
+      prize_amount: row.prize_amount,
+      bettor_name: row.bettor_name,
+      is_super_jackpot: row.is_super_jackpot,
+      is_return_bet: row.is_return_bet,
+      created_at: row.created_at,
+      is_dummy_bet: row.is_dummy_bet,
+    }));
+
+    setAllBets(rows);
+    setLoading(false);
+  }, [dateRange.end, dateRange.start, selectedBetTypes, selectedLottoTypes]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchBets();
+  }, [fetchBets]);
+
+  const filteredBets = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return allBets;
+
+    return allBets.filter((bet) => {
+      const drawTimeFormatted = bet.lotto_types?.draw_time
+        ? formatTo12h(bet.lotto_types.draw_time)
+        : "";
+
+      const searchableFields = [
+        bet.profiles?.full_name ?? "",
+        bet.id,
+        bet.lotto_types?.name ?? "",
+        bet.lotto_types?.draw_time ?? "",
+        drawTimeFormatted,
+        String(bet.bet_amount ?? ""),
+        formatCurrency(bet.bet_amount ?? 0),
+        bet.combination ?? "",
+        bet.bettor_name ?? "",
+      ];
+
+      return searchableFields.some((field) =>
+        field.toLowerCase().includes(query),
+      );
+    });
+  }, [allBets, searchQuery]);
+
+  const paginatedBets = useMemo(
+    () => filteredBets.slice(offset, offset + pageSize),
+    [filteredBets, offset, pageSize],
+  );
 
   const columns = useMemo(() => {
     return {
@@ -158,79 +243,67 @@ const BetsPage: React.FC = () => {
   }, []);
 
   const tableData = useMemo(() => {
-    return (
-      data?.betsCollection?.edges?.map((item) => {
-        return {
-          details: (
+    return paginatedBets.map((item) => {
+      return {
+        details: (
+          <div>
+            <div>Added By: {item.profiles.full_name}</div>
+            <div>On: {item.created_at}</div>
+            <div>RefID: {item.id}</div>
+            <div>Bettor Name: {item.bettor_name}</div>``
+          </div>
+        ),
+        combination: item.combination,
+        hit: item.hit ? "Yes" : "No",
+        prize: formatCurrency(item.prize_amount) || "--",
+        drawDate: (
+          <div>
             <div>
-              <div>Added By: {item.node.profiles.full_name}</div>
-              <div>On: {item.node.created_at}</div>
-              <div>RefID: {item.node.id}</div>
-              <div>DummyBet: {item.node.is_dummy_bet ? "Yes" : "No"}</div>
+              {item.lotto_types?.draw_time
+                ? formatTo12h(item.lotto_types.draw_time)
+                : ""}
             </div>
-          ),
-          combination: item.node.combination,
-          hit: item.node.hit ? "Yes" : "No",
-          prize: formatCurrency(item.node.prize_amount) || "--",
-          drawDate: (
-            <div>
-              <div>{formatTo12h(item.node.lotto_types.draw_time)}</div>
-              <div>{item.node.lotto_types.name}</div>
-            </div>
-          ),
-          bet: (
-            <div>
-              <div>PHP {item.node.bet_amount}</div>
-              <div>{item.node.bet_types?.name}</div>
-            </div>
-          ),
-          agent: item.node.profiles.full_name,
-          action: (
-            <td className="flex gap-2 px-4 py-3 items-center justify-end">
-              <div className="relative flex flex-col items-center group">
-                <button
-                  id="apple-imac-27-dropdown-button"
-                  data-tooltip-target="tooltip-default"
-                  onClick={() => {
-                    setSelectedBet(item.node);
-                    setViewModalOpen(true);
-                  }}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
-                  type="button"
-                >
-                  <Eye className="w-5 h-5" />
-                </button>
+            <div>{item.lotto_types?.name}</div>
+          </div>
+        ),
+        bet: (
+          <div>
+            <div>PHP {item.bet_amount}</div>
+            <div>{item.bet_types?.name}</div>
+          </div>
+        ),
+        agent: item.profiles.full_name,
+        action: (
+          <td className="flex gap-2 px-4 py-3 items-center justify-end">
+            <div className="relative flex flex-col items-center group">
+              <IconTableActionButton
+                data-tooltip-target="tooltip-default"
+                onClick={() => {
+                  setSelectedBet(item);
+                  setViewModalOpen(true);
+                }}
+                type="button"
+              >
+                <Eye className="w-5 h-5" />
+              </IconTableActionButton>
 
-                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
-                  <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
-                    View
-                  </span>
-                  <div className="w-3 h-3 -mt-2 rotate-45 bg-gray-900"></div>
-                </div>
+              <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
+                <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
+                  View
+                </span>
+                <div className="w-3 h-3 -mt-2 rotate-45 bg-gray-900"></div>
               </div>
-            </td>
-          ),
-        };
-      }) ?? []
-    );
-  }, [data]);
+            </div>
+          </td>
+        ),
+      };
+    });
+  }, [paginatedBets]);
 
-  const totalCount = data?.betsCollection.totalCount ?? 0;
-  const hasNextPage = Boolean(data?.betsCollection?.pageInfo?.hasNextPage);
+  const totalCount = filteredBets.length;
+  const hasNextPage = offset + paginatedBets.length < filteredBets.length;
 
   // Prepare filter data for TableHeader
-  // Calculate counts for each lotto type and bet type based on current bets data
-  const bets = data?.betsCollection?.edges || [];
-  const lottoTypeCounts: Record<string, number> = {};
-  const betTypeCounts: Record<string, number> = {};
-  bets.forEach((bet) => {
-    const lottoId = bet.node.lotto_types?.id;
-    const betTypeId = bet.node.bet_types?.id;
-    if (lottoId) lottoTypeCounts[lottoId] = (lottoTypeCounts[lottoId] || 0) + 1;
-    if (betTypeId)
-      betTypeCounts[betTypeId] = (betTypeCounts[betTypeId] || 0) + 1;
-  });
-
   // Use master data for filter counts (imitate agents table)
   const lottoTypeOptions =
     lottoTypesData &&
@@ -292,7 +365,7 @@ const BetsPage: React.FC = () => {
         </div>
         <DataTable
           loading={loading}
-          error={error}
+          error={error ?? undefined}
           tableName="Bets"
           columns={columns}
           data={tableData}

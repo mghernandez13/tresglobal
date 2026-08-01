@@ -9,6 +9,7 @@ import type { RolesQueryData, GetRoleQueryVariables } from "../../../types/api";
 import { ArrowLeft } from "lucide-react";
 import Headline from "../../../components/generic/Headline";
 import AdminTemplate from "../../../templates/AdminTemplate";
+import BackButton from "../../../components/generic/buttons/BackButton";
 
 const UpdateRolePage: React.FC = () => {
   const { roleId } = useParams<{ roleId: string }>();
@@ -70,8 +71,9 @@ const UpdateRolePage: React.FC = () => {
         },
       });
       Swal.fire({ icon: "success", title: "Role updated successfully!" });
-    } catch (error: any) {
-      Swal.fire({ icon: "error", title: "Update failed", text: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Update failed";
+      Swal.fire({ icon: "error", title: "Update failed", text: message });
     }
   };
 
@@ -81,12 +83,9 @@ const UpdateRolePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Update Role</Headline>
         </div>
         <RoleForm

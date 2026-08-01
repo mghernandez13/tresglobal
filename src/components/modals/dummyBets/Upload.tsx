@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { GET_BETS } from "../../../graphql/queries/bets";
 import { GET_LOTTO_TYPES } from "../../../graphql/queries/lotto";
 import { CREATE_BETS } from "../../../graphql/queries/bets";
 import PrimaryButton from "../../generic/buttons/Primary";
@@ -9,26 +8,18 @@ import Select from "../../generic/Select";
 import Input from "../../generic/Input";
 import Label from "../../generic/Label";
 import { formatTo12h } from "../../../utils/helper";
-import type {
-  LottoQueryData,
-  LottoQueryVariables,
-  QueryParamsVariables,
-} from "../../../types/api";
+import type { LottoQueryData, LottoQueryVariables } from "../../../types/api";
 import type { UploadDummyBetModalProps } from "../../../types/bets";
 import * as XLSX from "xlsx";
 import Loading from "../../generic/icons/Loading";
 import Swal from "sweetalert2";
 import { UserAuth } from "../../context/AuthContext";
 
-interface UploadDummyBetModalWithVarsProps extends UploadDummyBetModalProps {
-  betsQueryVariables: QueryParamsVariables;
-}
-
-const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
+const UploadDummyBetModal: React.FC<UploadDummyBetModalProps> = ({
   isOpen,
   onClose,
   agentOptions,
-  betsQueryVariables,
+  onUploadSuccess,
 }) => {
   const { session } = UserAuth();
 
@@ -51,17 +42,14 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
     LottoQueryData,
     LottoQueryVariables
   >(GET_LOTTO_TYPES, {
-    variables: { first: 100, offset: 0 },
+    variables: {
+      first: 100,
+      offset: 0,
+      filter: { is_archive: { eq: false } },
+      sortOrder: [{ name: "AscNullsFirst" }],
+    },
   });
-  const [createBets] = useMutation(CREATE_BETS, {
-    refetchQueries: [
-      {
-        query: GET_BETS,
-        variables: betsQueryVariables,
-      },
-    ],
-    awaitRefetchQueries: true,
-  });
+  const [createBets] = useMutation(CREATE_BETS);
 
   const lottoTypes = useMemo(
     // Setup CREATE_BETS mutation
@@ -125,8 +113,11 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
         // Skip header row if present
         for (let i = 0; i < jsonData.length; i++) {
           const row: string[] = jsonData[i] as string[];
+          if (row.length < 2 || !row[0] || !row[1]) {
+            continue;
+          }
           const bettor = row[0];
-          const combinationAndAmount = row[1].split("=");
+          const combinationAndAmount = row[1]?.split("=");
           const combination = combinationAndAmount[0];
           const amount = combinationAndAmount[1];
           if (!row[0] || !row[1] || !combination || !amount) continue;
@@ -141,6 +132,7 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
                 combination,
                 isDummy: true,
                 agent,
+                betStatus: "completed", // Set the bet status to "completed"
                 createdBy: session?.user?.id || "",
               },
             });
@@ -164,18 +156,31 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
 
         modalReset();
         onClose();
+        onUploadSuccess?.();
         setIsLoading(false);
       };
       reader.readAsArrayBuffer(file);
     },
-    [agent, file, modalReset, onClose, createBets, drawType, session?.user?.id],
+    [
+      agent,
+      file,
+      modalReset,
+      onClose,
+      onUploadSuccess,
+      createBets,
+      drawType,
+      session?.user?.id,
+    ],
   );
 
   useEffect(() => {
-    if (!drawType) return;
+    if (!drawType) {
+      setGameType("");
+      setDrawTime("");
+      return;
+    }
     const selected = lottoTypes.find((lt) => lt.id === drawType);
     if (selected) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGameType(selected.game_type || "");
       setDrawTime(formatTo12h(selected.draw_time || ""));
     }
@@ -185,7 +190,7 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-[#232b38] rounded-lg shadow-lg w-full max-w-md p-8 relative">
+      <div className="themed-scrollbar bg-black rounded-lg shadow-lg w-full max-w-md p-8 relative max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4 text-white">
           UPLOAD DUMMY BETS
         </h2>
@@ -212,7 +217,7 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
                 htmlFor="dummy-bet-upload-input"
                 className="flex flex-col items-center cursor-pointer w-full"
               >
-                <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-2">
+                <span className="inline-block px-4 py-2 bg-yellow-500 text-black rounded hover:bg-yellow-600 mb-2">
                   Choose File
                 </span>
                 {!file && (
@@ -284,9 +289,10 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
                 id: opt.value || opt.id || "",
                 value: opt.value || "",
                 label: opt.label,
-                level: 0,
+                level: opt.level ?? 0,
               }))}
               name="agent"
+              isHirarchical
               preSelectedOption={
                 agentOptions.find((opt) => opt.value === agent)
                   ? {
@@ -295,7 +301,9 @@ const UploadDummyBetModal: React.FC<UploadDummyBetModalWithVarsProps> = ({
                       label:
                         agentOptions.find((opt) => opt.value === agent)
                           ?.label || "",
-                      level: 0,
+                      level:
+                        agentOptions.find((opt) => opt.value === agent)
+                          ?.level ?? 0,
                     }
                   : null
               }

@@ -21,7 +21,7 @@ interface EditWinningCombinationModalProps {
   numberOfDigits?: number;
   minNumber?: number;
   maxNumber?: number;
-  onSuccess?: () => void;
+  onSuccess?: (newCombination: string) => void;
 }
 
 const EditWinningCombinationModal: React.FC<
@@ -89,7 +89,7 @@ const EditWinningCombinationModal: React.FC<
     const filteredInputs = newInputs.filter((v) => v !== "");
     const hasDuplicates =
       new Set(filteredInputs).size !== filteredInputs.length;
-    if (hasDuplicates) {
+    if (hasDuplicates && gameType === "LP3") {
       Swal.fire({
         icon: "error",
         title: "Duplicate Value",
@@ -140,7 +140,7 @@ const EditWinningCombinationModal: React.FC<
       }
 
       onClose();
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(joined);
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -158,9 +158,9 @@ const EditWinningCombinationModal: React.FC<
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-[#1f2937] border border-gray-700 w-full max-w-md p-8 rounded-lg shadow-2xl z-[70]">
+      <div className="relative bg-black border border-gray-700 w-full max-w-md p-8 rounded-lg shadow-2xl z-[70]">
         <button
-          className="absolute top-3 right-3 text-white hover:text-gray-400"
+          className="absolute top-3 right-3 text-white hover:text-gray-400 bg-transparent"
           onClick={onClose}
         >
           <X className="w-5 h-5" />
@@ -203,7 +203,7 @@ const EditWinningCombinationModal: React.FC<
               ))}
             </div>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-3 mt-4">
             <button
               type="button"
               className="px-4 py-2 bg-gray-500 text-white rounded"
@@ -214,7 +214,7 @@ const EditWinningCombinationModal: React.FC<
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
+              className="px-4 py-2 bg-yellow-500 text-black rounded"
               disabled={loading}
             >
               Save

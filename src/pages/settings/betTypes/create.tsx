@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import BetTypeForm from "../../../components/forms/BetTypeForm";
 import type { BetTypeFormData } from "../../../components/forms/BetTypeForm";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import BackButton from "../../../components/generic/buttons/BackButton";
 
 const CreateBetTypePage: React.FC = () => {
   useCheckUserPermissions("Add Bet Types");
@@ -74,12 +75,9 @@ const CreateBetTypePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Create Bet Type</Headline>
         </div>
         <BetTypeForm

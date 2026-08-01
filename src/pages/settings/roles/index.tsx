@@ -23,6 +23,7 @@ import ViewRoleModal from "./ViewRoleModal";
 import PermissionDot from "./dots";
 import PrimaryButton from "../../../components/generic/buttons/Primary";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import IconTableActionButton from "../../../components/generic/buttons/IconTableActionButton";
 
 const RolesPage: React.FC = () => {
   useCheckUserPermissions("View Roles");
@@ -83,8 +84,6 @@ const RolesPage: React.FC = () => {
         text: "Are you sure you want to delete this role?",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
         confirmButtonText: "Delete",
       });
       if (result.isConfirmed) {
@@ -233,8 +232,7 @@ const RolesPage: React.FC = () => {
             action: (
               <td className="flex gap-2 px-4 py-3 items-center justify-end">
                 <div className="relative flex flex-col items-center group">
-                  <button
-                    className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  <IconTableActionButton
                     type="button"
                     onClick={() => {
                       setSelectedRole({
@@ -245,7 +243,7 @@ const RolesPage: React.FC = () => {
                     }}
                   >
                     <Eye className="w-5 h-5" />
-                  </button>
+                  </IconTableActionButton>
                   <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                     <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                       View
@@ -254,13 +252,12 @@ const RolesPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="relative flex flex-col items-center group">
-                  <button
-                    className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                  <IconTableActionButton
                     type="button"
                     onClick={() => navigate(`update/${item.node.id}`)}
                   >
                     <SquarePen className="w-5 h-5" />
-                  </button>
+                  </IconTableActionButton>
                   <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                     <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                       Edit
@@ -269,13 +266,12 @@ const RolesPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="relative flex flex-col items-center group">
-                  <button
-                    className="inline-flex items-center p-0.5 text-sm font-medium text-center text-red-500 hover:text-red-800 rounded-lg focus:outline-none dark:text-red-400 dark:hover:text-red-100"
+                  <IconTableActionButton
                     type="button"
                     onClick={() => handleDelete(item.node.id)}
                   >
                     <Trash2 className="w-5 h-5" />
-                  </button>
+                  </IconTableActionButton>
                   <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                     <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                       Delete

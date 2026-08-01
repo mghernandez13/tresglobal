@@ -82,6 +82,36 @@ export const getTimes = () => {
   return list;
 };
 
-export const isValueNumberic = (value: string) => {
+export const isValueNumeric = (value: string) => {
   return /^\d+$/.test(value);
 };
+
+export const isSuperAdmin = (email: string | undefined): boolean => {
+  return email === "superadmin@tresglobal.online";
+};
+
+export const normalizeSingleRelation = <T>(value: T | T[] | null): T | null => {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value;
+};
+
+export const compareText = (
+  left: string,
+  right: string,
+  ascending: boolean,
+) => {
+  const comparison = left.localeCompare(right, undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
+  return ascending ? comparison : -comparison;
+};
+
+export const compareNumber = (
+  left: number,
+  right: number,
+  ascending: boolean,
+) => (ascending ? left - right : right - left);

@@ -34,6 +34,7 @@ const MyProfilePage: React.FC = () => {
     avatarUrl: "",
     isQuotaBased: false,
     isActive: true,
+    remittancePercent: 0,
     upline: null,
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -50,6 +51,7 @@ const MyProfilePage: React.FC = () => {
         avatarUrl: String(user.avatar_url),
         isQuotaBased: Boolean(user.is_quota_based),
         isActive: Boolean(user.status),
+        remittancePercent: user.remittance_percent ?? 0,
         upline: null,
       });
     }
@@ -128,7 +130,7 @@ const MyProfilePage: React.FC = () => {
         </div>
         <form
           onSubmit={handleSubmit}
-          className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl mx-auto"
+          className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl mx-auto"
         >
           <div className="flex flex-col items-center mb-8 p-4 bg-[#16191d] rounded-lg border border-gray-700">
             <div className="relative w-24 h-24 mb-4">
@@ -142,7 +144,9 @@ const MyProfilePage: React.FC = () => {
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-500">
-                  <span className="text-gray-400 text-2xl">👤</span>
+                  <span className="text-yellow-500 bg-yellow-500 text-2xl">
+                    👤
+                  </span>
                 </div>
               )}
               {uploading && (
@@ -219,8 +223,11 @@ const MyProfilePage: React.FC = () => {
             </button>
           </div>
           <ChangePasswordModal
+            userId={String(userId)}
+            userEmail={formData.email}
             isOpen={showPasswordModal}
             onClose={() => setShowPasswordModal(false)}
+            requireOldPassword
           />
         </form>
       </div>

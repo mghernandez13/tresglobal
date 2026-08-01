@@ -5,8 +5,29 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { GET_SETTINGS, UPDATE_SETTING } from "../../graphql/queries/settings";
 import type { SettingsQueryData } from "../../types/api";
 import Swal from "sweetalert2";
-import { betMainConfigs, betTimeConfigs } from "./configs";
+import { betMainConfigs, betTimeConfigs, otherConfigs } from "./configs";
 import Loading from "../generic/icons/Loading";
+
+type BetTimeConfig = {
+  name: string;
+  label: string;
+  drawTime: string;
+  cutoffTime: string;
+  isActive: boolean;
+};
+
+type OtherConfigField = {
+  key: string;
+  label: string;
+  value: string;
+};
+
+type OtherConfig = {
+  key: string;
+  title: string;
+  fields: OtherConfigField[];
+  isActive: boolean;
+};
 
 const ConfigurationForm: React.FC = () => {
   const { data } = useQuery<SettingsQueryData>(GET_SETTINGS, {
@@ -15,7 +36,12 @@ const ConfigurationForm: React.FC = () => {
   });
   const [updateSettings, { loading }] = useMutation(UPDATE_SETTING);
 
-  const [betTimeConfigForm, setBetTimeConfigForm] = useState(betTimeConfigs);
+  const [betTimeConfigForm, setBetTimeConfigForm] = useState<BetTimeConfig[]>(
+    betTimeConfigs as BetTimeConfig[],
+  );
+  const [otherConfigForm, setOtherConfigForm] = useState<OtherConfig[]>(
+    otherConfigs as OtherConfig[],
+  );
   const [form, setForm] = useState<{ [k: string]: number | string }>(
     () =>
       Object.fromEntries(betMainConfigs.map((c) => [c.value, c.default])) as {
@@ -52,6 +78,46 @@ const ConfigurationForm: React.FC = () => {
     });
   };
 
+  const handleOtherConfigChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    configIndex: number,
+    fieldIndex?: number,
+  ) => {
+    const { name, checked, value } = e.target;
+
+    setOtherConfigForm((prev) => {
+      const newConfig = [...prev];
+      const current = newConfig[configIndex];
+
+      if (!current) return prev;
+
+      if (name.endsWith("_is_active")) {
+        newConfig[configIndex] = {
+          ...current,
+          isActive: checked,
+        };
+        return newConfig;
+      }
+
+      if (fieldIndex == null || !current.fields[fieldIndex]) {
+        return prev;
+      }
+
+      const updatedFields = [...current.fields];
+      updatedFields[fieldIndex] = {
+        ...updatedFields[fieldIndex],
+        value,
+      };
+
+      newConfig[configIndex] = {
+        ...current,
+        fields: updatedFields,
+      };
+
+      return newConfig;
+    });
+  };
+
   const handleSubmit = useCallback(
     (e: React.SubmitEvent) => {
       e.preventDefault();
@@ -84,6 +150,28 @@ const ConfigurationForm: React.FC = () => {
         );
       });
 
+      otherConfigForm.forEach((cfg) => {
+        cfg.fields.forEach((field) => {
+          updatePromises.push(
+            updateSettings({
+              variables: {
+                name: field.key,
+                value: field.value,
+              },
+            }),
+          );
+        });
+
+        updatePromises.push(
+          updateSettings({
+            variables: {
+              name: `${cfg.key}_is_active`,
+              value: String(cfg.isActive),
+            },
+          }),
+        );
+      });
+
       Promise.all(updatePromises)
         .then(() => {
           Swal.fire({
@@ -100,7 +188,7 @@ const ConfigurationForm: React.FC = () => {
           });
         });
     },
-    [betTimeConfigForm, form, updateSettings],
+    [betTimeConfigForm, form, otherConfigForm, updateSettings],
   );
 
   useEffect(() => {
@@ -133,12 +221,23 @@ const ConfigurationForm: React.FC = () => {
           isActive: settingsMap[`${cfg.name}_is_active`] === "true",
         }));
       });
+
+      setOtherConfigForm((prev) => {
+        return prev.map((cfg) => ({
+          ...cfg,
+          fields: cfg.fields.map((field) => ({
+            ...field,
+            value: settingsMap[field.key] || "",
+          })),
+          isActive: settingsMap[`${cfg.key}_is_active`] === "true",
+        }));
+      });
     }
   }, [data]);
 
   return (
     <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
-      <div className="bg-[#232b3b] rounded-lg p-8 border border-gray-700">
+      <div className="bg-black rounded-lg p-8 border border-gray-700">
         <h2 className="text-lg font-bold mb-6 text-white">
           Max Bet Per Combination
         </h2>
@@ -151,7 +250,7 @@ const ConfigurationForm: React.FC = () => {
                 </div>
                 <div className="flex-col w-2/3 items-center gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="bg-gray-700 text-white px-2 py-1 rounded-l">
+                    <span className="bg-[#222910] text-white px-2 py-1 rounded-l">
                       PHP
                     </span>
                     <Input
@@ -219,6 +318,44 @@ const ConfigurationForm: React.FC = () => {
                 className="w-4 h-4 accent-yellow-500 bg-[#16191d] border-gray-600 rounded cursor-pointer"
               />
             </div>
+          </div>
+        </div>
+      ))}
+      {otherConfigForm.map((cfg, configIndex) => (
+        <div
+          key={cfg.key}
+          className="bg-black rounded-lg p-8 border border-gray-700"
+        >
+          <h2 className="text-lg font-bold mb-6 text-white">{cfg.title}</h2>
+          {cfg.fields.map((field, fieldIndex) => (
+            <div key={field.key} className="flex flex-col gap-6">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="flex w-1/3 items-center gap-2">
+                  <Label className="w-56 min-w-[12rem]">{field.label}</Label>
+                </div>
+                <div className="flex-col w-2/3 items-center gap-2">
+                  <Input
+                    type="text"
+                    name={field.key}
+                    value={field.value}
+                    onChange={(e) =>
+                      handleOtherConfigChange(e, configIndex, fieldIndex)
+                    }
+                    className="w-32"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center gap-4 mt-4">
+            <Label className="w-56 min-w-[12rem]">Activate</Label>
+            <input
+              type="checkbox"
+              name={`${cfg.key}_is_active`}
+              checked={cfg.isActive}
+              onChange={(e) => handleOtherConfigChange(e, configIndex)}
+              className="w-4 h-4 accent-yellow-500 bg-[#16191d] border-gray-600 rounded cursor-pointer"
+            />
           </div>
         </div>
       ))}

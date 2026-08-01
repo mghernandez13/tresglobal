@@ -103,6 +103,7 @@ export interface AgentFormDataProps {
   permissionId: string | null;
   avatarUrl: string;
   isQuotaBased: boolean;
+  remittancePercent: number | null;
   isActive: boolean;
   upline?: string | null;
 }
@@ -124,3 +125,31 @@ export interface SearchableSelectOption {
   label: string;
   level: number;
 }
+
+export interface DashboardCardProps {
+  startDate: string;
+  endDate: string;
+}
+
+export interface SummaryProps {
+  selectedDate: string;
+  onReload?: () => void;
+}
+
+export interface BetsSummaryProps extends SummaryProps {
+  gameType?: string;
+}
+
+export type AgentHierarchyRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  upline: string | null;
+};
+
+export type AgentOption = {
+  id: string;
+  value: string;
+  label: string;
+  level?: number;
+};

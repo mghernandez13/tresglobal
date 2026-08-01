@@ -18,6 +18,7 @@ export const GET_LOTTO_TYPES = gql`
           id
           game_type
           draw_time
+          cutoff_time
           name
           days_active
           is_active
@@ -51,6 +52,7 @@ export const GET_LOTTO_TYPE = gql`
           id
           game_type
           draw_time
+          cutoff_time
           name
           days_active
           is_active
@@ -69,6 +71,7 @@ export const UPDATE_LOTTO_TYPE = gql`
     $id: UUID!
     $gameType: String
     $drawTime: String
+    $cutoffTime: String
     $name: String
     $daysActive: String
     $isActive: Boolean
@@ -82,6 +85,7 @@ export const UPDATE_LOTTO_TYPE = gql`
       set: {
         game_type: $gameType
         draw_time: $drawTime
+        cutoff_time: $cutoffTime
         name: $name
         days_active: $daysActive
         is_active: $isActive
@@ -104,24 +108,28 @@ export const CREATE_LOTTO_TYPE = gql`
   mutation CreateLottoType(
     $gameType: String!
     $drawTime: String!
+    $cutoffTime: String
     $name: String!
     $daysActive: String!
     $isActive: Boolean!
     $numberOfDigits: Int!
     $minNumber: Int!
     $maxNumber: Int!
+    $logoImage: String
   ) {
     insertIntolotto_typesCollection(
       objects: [
         {
           game_type: $gameType
           draw_time: $drawTime
+          cutoff_time: $cutoffTime
           name: $name
           days_active: $daysActive
           is_active: $isActive
           number_of_digits: $numberOfDigits
           min_number: $minNumber
           max_number: $maxNumber
+          logo_image: $logoImage
         }
       ]
     ) {

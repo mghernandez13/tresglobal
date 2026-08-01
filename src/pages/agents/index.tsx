@@ -29,6 +29,7 @@ import ViewAgentModal from "../../components/modals/agent/ViewAgentModal";
 import type { SortDirection } from "../../types/constants";
 import { useCheckUserPermissions } from "../../hooks/useCheckUserPermission";
 import PrimaryButton from "../../components/generic/buttons/Primary";
+import IconTableActionButton from "../../components/generic/buttons/IconTableActionButton";
 
 const AgentsPage: React.FC = () => {
   useCheckUserPermissions("View Agents");
@@ -55,10 +56,12 @@ const AgentsPage: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(5);
   const offset = (currentPage - 1) * pageSize;
 
-  const { data, loading, error } = useQuery<
-    UsersQueryData,
-    UsersQueryVariables
-  >(GET_USERS, {
+  const {
+    data,
+    loading,
+    error,
+    refetch: refetchUsers,
+  } = useQuery<UsersQueryData, UsersQueryVariables>(GET_USERS, {
     variables: {
       first: pageSize,
       offset,
@@ -72,27 +75,7 @@ const AgentsPage: React.FC = () => {
     fetchPolicy: "network-only",
   });
 
-  const [updateUser, { loading: updateUserLoading }] = useMutation(
-    UPDATE_USER,
-    {
-      refetchQueries: [
-        {
-          query: GET_USERS,
-          variables: {
-            first: pageSize,
-            offset,
-            searchTerm: searchQuery ? `%${searchQuery}%` : "%",
-            ...(selectedRoleFilter.length !== 0 && {
-              roleFilter: selectedRoleFilter,
-            }),
-          },
-        },
-        {
-          query: GET_ROLE_COUNTS,
-        },
-      ],
-    },
-  );
+  const [updateUser, { loading: updateUserLoading }] = useMutation(UPDATE_USER);
 
   const [bulkUpdateStatus, { loading: bulkUpdateLoading }] = useMutation(
     BULK_UPDATE_USER_STATUS,
@@ -154,6 +137,7 @@ const AgentsPage: React.FC = () => {
                 isArchive: true,
               },
             });
+            await refetchUsers();
             Swal.fire({
               icon: "success",
               title: "Delete Agent",
@@ -169,7 +153,7 @@ const AgentsPage: React.FC = () => {
         }
       });
     },
-    [updateUser],
+    [refetchUsers, updateUser],
   );
 
   const toggleViewAgentModal = useCallback(
@@ -224,9 +208,9 @@ const AgentsPage: React.FC = () => {
           <th scope="col" className="px-4 py-3">
             Income %
           </th>
-          <th scope="col" className="px-4 py-3">
+          {/* <th scope="col" className="px-4 py-3">
             Is Quota Based
-          </th>
+          </th> */}
           <th scope="col" className="px-4 py-3">
             Role
           </th>
@@ -249,28 +233,36 @@ const AgentsPage: React.FC = () => {
     return map;
   }, [rolesData]);
 
+  const computeIncomePercent = (remitPercent: number | null): number | null => {
+    // Assuming the income percent is calculated as 100 - remittance percent
+    if (remitPercent === null || remitPercent === undefined) {
+      return null;
+    }
+    return 100 - remitPercent;
+  };
+
   const tableData = useMemo(() => {
     return (
       data?.profilesCollection?.edges?.map((item) => {
         return {
           name: `${item?.node?.first_name} ${item?.node?.last_name}`,
           email: item?.node?.email,
-          remitPercent: "",
-          incomePercent: "",
-          quotaBased: item.node.is_quota_based ? "yes" : "-",
+          remitPercent: item?.node?.remittance_percent ?? "-",
+          incomePercent:
+            computeIncomePercent(item?.node?.remittance_percent) ?? "-",
+          // quotaBased: item.node.is_quota_based ? "yes" : "-",
           role: permissionIdToRoleName[item.node.permission_id ?? ""] || "-",
           action: (
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   id="apple-imac-27-dropdown-button"
                   data-tooltip-target="tooltip-default"
                   onClick={() => toggleViewAgentModal(item.node.id)}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                   type="button"
                 >
                   <Eye className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
 
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
@@ -282,15 +274,12 @@ const AgentsPage: React.FC = () => {
               {item.node.email !== "superadmin@tresglobal.online" && (
                 <>
                   <div className="relative flex flex-col items-center group">
-                    <button
+                    <IconTableActionButton
                       onClick={() => navigate(`/agents/update/${item.node.id}`)}
-                      id="apple-imac-27-dropdown-button"
-                      data-dropdown-toggle="apple-imac-27-dropdown"
-                      className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                       type="button"
                     >
                       <SquarePen className="w-5 h-5" />
-                    </button>
+                    </IconTableActionButton>
 
                     <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                       <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
@@ -300,15 +289,12 @@ const AgentsPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="relative flex flex-col items-center group">
-                    <button
-                      id="apple-imac-27-dropdown-button"
-                      data-dropdown-toggle="apple-imac-27-dropdown"
-                      className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                    <IconTableActionButton
                       type="button"
                       onClick={() => handleDelete(String(item.node.id))}
                     >
                       <Trash2 className="w-5 h-5" />
-                    </button>
+                    </IconTableActionButton>
                     <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                       <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                         Delete

@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Label from "../generic/Label";
 import Input from "../generic/Input";
 import SelectWithSearch from "../generic/SelectWithSearch";
-import { useQuery } from "@apollo/client/react";
+import { useLazyQuery } from "@apollo/client/react";
 import { GET_LOTTO_TYPES } from "../../graphql/queries/lotto";
 import type { LottoQueryData, LottoQueryVariables } from "../../types/api";
 import type { SearchableSelectOption } from "../../types/generic";
-import { formatDrawDate, isValueNumberic } from "../../utils/helper";
+import { formatDrawDate, isValueNumeric } from "../../utils/helper";
+import { getDayNameFromDateString } from "../../utils/datetime";
 import Swal from "sweetalert2";
 import { supabase } from "../../db/supabase";
 import { UserAuth } from "../context/AuthContext";
@@ -36,6 +38,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
 }) => {
   const { session } = UserAuth();
   const formRef = useRef<HTMLFormElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [createAnother, setCreateAnother, getLatestCreateAnother] =
     useExtendedState(false);
   const [form, setForm] = React.useState({
@@ -46,18 +49,30 @@ const ResultForm: React.FC<ResultFormProps> = ({
   });
   const [combInputs, setCombInputs] = React.useState<string[]>([]);
 
-  const { data: lottoTypesData } = useQuery<
+  const [fetchLottoTypes, { data: lottoTypesData }] = useLazyQuery<
     LottoQueryData,
     LottoQueryVariables
   >(GET_LOTTO_TYPES, {
-    variables: {
-      first: 100,
-      offset: 0,
-      filter: { is_archive: { eq: false } },
-      sortOrder: [{ name: "AscNullsFirst" }],
-    },
     fetchPolicy: "network-only",
   });
+
+  useEffect(() => {
+    const dayName = getDayNameFromDateString(form.draw_date);
+
+    if (!dayName) return;
+
+    void fetchLottoTypes({
+      variables: {
+        first: 100,
+        offset: 0,
+        filter: {
+          is_archive: { eq: false },
+          days_active: { contains: [dayName] },
+        },
+        sortOrder: [{ name: "AscNullsFirst" }],
+      },
+    });
+  }, [form.draw_date, fetchLottoTypes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,7 +80,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
   };
 
   const handleCombInputChange = (idx: number, value: string) => {
-    if (!isValueNumberic(value) && value !== "") return;
+    if (!isValueNumeric(value) && value !== "") return;
     // Validate min/max if draw type is selected
     if (selectedLottoType && value !== "") {
       const num = Number(value);
@@ -83,6 +98,17 @@ const ResultForm: React.FC<ResultFormProps> = ({
     }
     const newInputs = [...combInputs];
     newInputs[idx] = value;
+    const filteredInputs = newInputs.filter((v) => v !== "");
+    const hasDuplicates =
+      new Set(filteredInputs).size !== filteredInputs.length;
+    if (hasDuplicates && form.draw_type === "LP3") {
+      Swal.fire({
+        icon: "error",
+        title: "Duplicate Value",
+        text: "Each digit in the winning combination must be unique.",
+      });
+      return;
+    }
     setCombInputs(newInputs);
     setForm((prev) => ({ ...prev, combination: newInputs.join("-") }));
   };
@@ -191,7 +217,7 @@ const ResultForm: React.FC<ResultFormProps> = ({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl w-full"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl w-full"
     >
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -248,14 +274,27 @@ const ResultForm: React.FC<ResultFormProps> = ({
         ) : null}
         <div className="flex flex-col gap-2">
           <Label>Password</Label>
-          <Input
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="Password"
-            required
-          />
+          <div className="relative w-full">
+            <Input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 bg-transparent border-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
         <div className="mt-8 flex justify-end space-x-4">
           <button

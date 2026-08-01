@@ -23,7 +23,7 @@ const NotificationAlert: React.FC<NotificationAlertProps> = (props) => {
       <button
         type="button"
         onClick={toggleDismiss}
-        className={`ml-4 -mx-1.5 -my-1.5 p-1.5 inline-flex items-center justify-center h-8 w-8 rounded-md text-${AlertColors[type]}-400 hover:bg-${AlertColors[type]}-900/50 focus:outline-none focus:ring-2 focus:ring-${AlertColors[type]}-800 transition-colors`}
+        className={`ml-4 -mx-1.5 -my-1.5 p-1.5 inline-flex items-center justify-center h-8 w-8 rounded-md bg-transparent text-${AlertColors[type]}-400 hover:bg-${AlertColors[type]}-900/50 focus:outline-none focus:ring-2 focus:ring-${AlertColors[type]}-800 transition-colors`}
         aria-label="Dismiss"
       >
         <span className="sr-only">Dismiss</span>

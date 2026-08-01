@@ -9,7 +9,7 @@ const PermissionDot: React.FC<{ isAdmin: boolean; perm: string }> = ({
         width: 10,
         height: 10,
         borderRadius: "50%",
-        backgroundColor: isAdmin ? "#22c55e" : "#ef4444",
+        backgroundColor: isAdmin ? "#c9e71d" : "#ef4444",
         verticalAlign: "middle",
       }}
     />

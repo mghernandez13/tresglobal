@@ -16,6 +16,7 @@ import type {
 import LottoTypeForm, {
   type LottoFormData,
 } from "../../../components/forms/LottoTypeForm";
+import BackButton from "../../../components/generic/buttons/BackButton";
 
 const UpdateLottoTypePage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const UpdateLottoTypePage: React.FC = () => {
   const [formData, setFormData] = useState<LottoFormData>({
     gameType: "",
     drawTime: "",
+    cutoffTime: "",
     name: "",
     daysActive: [],
     isActive: true,
@@ -54,9 +56,14 @@ const UpdateLottoTypePage: React.FC = () => {
       // draw_time comes back as "HH:MM:SS" from database; our select options expect "HH:MM"
       const raw = node.draw_time || "";
       const normalizedTime = raw ? raw.split(":").slice(0, 2).join(":") : "";
+      const rawCutoff = node.cutoff_time || "";
+      const normalizedCutoffTime = rawCutoff
+        ? rawCutoff.split(":").slice(0, 2).join(":")
+        : "";
       setFormData({
         gameType: node.game_type || "",
         drawTime: normalizedTime,
+        cutoffTime: normalizedCutoffTime,
         name: node.name || "",
         daysActive: node.days_active ?? [],
         isActive: Boolean(node.is_active),
@@ -109,6 +116,7 @@ const UpdateLottoTypePage: React.FC = () => {
           id: lottoTypeId,
           gameType: formData.gameType,
           drawTime: formData.drawTime,
+          ...(formData.cutoffTime && { cutoffTime: formData.cutoffTime }),
           name: formData.name,
           daysActive: formData.daysActive,
           isActive: formData.isActive,
@@ -139,12 +147,9 @@ const UpdateLottoTypePage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Update Lotto Type</Headline>
         </div>
         <LottoTypeForm

@@ -27,6 +27,7 @@ import { formatTo12h } from "../../../utils/helper";
 import type { LottoQueryData, LottoQueryVariables } from "../../../types/api";
 import PrimaryButton from "../../../components/generic/buttons/Primary";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import IconTableActionButton from "../../../components/generic/buttons/IconTableActionButton";
 
 const LottoTypesPage: React.FC = () => {
   useCheckUserPermissions("View Lotto Types");
@@ -212,7 +213,7 @@ const LottoTypesPage: React.FC = () => {
 
       return createPortal(
         <div
-          className="w-40 bg-[#1f2937] border border-gray-600 rounded shadow-lg z-20 days-popup-floating"
+          className="w-40 bg-[#222222] border border-gray-600 rounded shadow-lg z-20 days-popup-floating"
           style={{
             position: "absolute",
             top: popupPos.top,
@@ -226,16 +227,16 @@ const LottoTypesPage: React.FC = () => {
               return (
                 <li key={d} className="flex gap-2 m-2 items-center">
                   {active ? (
-                    <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-500" />
+                    <div className="w-5 h-5 rounded-full border-2 border-yellow-500 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-yellow-500" />
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-red-500 flex items-center justify-center">
-                      <X className="w-3 h-3 text-red-500" />
+                    <div className="w-5 h-5 rounded-full border-2 border-white-500 flex items-center justify-center">
+                      <X className="w-3 h-3 text-white-500" />
                     </div>
                   )}
                   <span
-                    className={`text-sm ${active ? "text-green-500" : "text-red-500"}`}
+                    className={`text-sm ${active ? "text-yellow-500" : "text-white-500"}`}
                   >
                     {d}
                   </span>
@@ -343,7 +344,7 @@ const LottoTypesPage: React.FC = () => {
             <div className="relative days-popup-container">
               <button
                 type="button"
-                className="text-blue-500 hover:underline"
+                className="text-yellow-500 hover:underline bg-transparent"
                 onClick={(e) =>
                   togglePopup(index, item?.node?.days_active ?? [], e)
                 }
@@ -358,8 +359,8 @@ const LottoTypesPage: React.FC = () => {
           maxNumber: item?.node?.max_number,
           active: item?.node?.is_active ? (
             <div className="flex items-center">
-              <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-green-500" />
+              <div className="w-5 h-5 rounded-full border-2 border-yellow-500 flex items-center justify-center">
+                <Check className="w-3 h-3 text-yellow-500" />
               </div>
             </div>
           ) : (
@@ -372,13 +373,12 @@ const LottoTypesPage: React.FC = () => {
           action: (
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   onClick={() => setViewingLottoId(String(item?.node?.id))}
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                   type="button"
                 >
                   <Eye className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     View
@@ -387,15 +387,14 @@ const LottoTypesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
+                <IconTableActionButton
                   onClick={() =>
                     navigate(`/settings/lotto-types/update/${item?.node?.id}`)
                   }
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                   type="button"
                 >
                   <SquarePen className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Edit
@@ -404,13 +403,12 @@ const LottoTypesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                <IconTableActionButton
                   type="button"
                   onClick={() => handleDelete(String(item?.node?.id))}
                 >
                   <Trash2 className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Delete

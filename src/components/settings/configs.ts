@@ -24,10 +24,10 @@ export const betMainConfigs = [
     desc: "3D Straight - Maximum Amount on per combination",
   },
   {
-    label: "3D Rambolito 2 - Max Bet",
-    value: "3d_rambolito2_max_bet",
+    label: "3D Rambolito 3 - Max Bet",
+    value: "3d_rambolito3_max_bet",
     default: 0,
-    desc: "3D Rambolito 2 - Max Bet",
+    desc: "3D Rambolito 3 - Max Bet",
   },
   {
     label: "3D Rambolito 6 - Max Bet",
@@ -38,53 +38,102 @@ export const betMainConfigs = [
 ];
 
 export const betTimeConfigs = [
+  // {
+  //   name: "lp3_9pm",
+  //   label: "LP3 9PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "2d_2pm",
+  //   label: "2D 2PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "2d_5pm",
+  //   label: "2D 5PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "2d_9pm",
+  //   label: "2D 9PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "3d_2pm",
+  //   label: "3D 2PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "3d_5pm",
+  //   label: "3D 5PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+  // {
+  //   name: "3d_9pm",
+  //   label: "3D 9PM",
+  //   drawTime: "",
+  //   cutoffTime: "",
+  //   isActive: false,
+  // },
+];
+
+export const otherConfigs = [
   {
-    name: "lp3_9pm",
-    label: "LP3 9PM",
-    drawTime: "",
-    cutoffTime: "",
+    title: "Monthly Bracket",
+    key: "2d_monthly_bracket_prize",
+    fields: [
+      {
+        label: "2D Straight - Prize per 10 pesos",
+        key: "2d_monthly_bracket_prize_per_ten_straight",
+        value: "",
+      },
+      {
+        label: "2D Ramble - Prize per 10 pesos",
+        key: "2d_monthly_bracket_prize_per_ten_ramble",
+        value: "",
+      },
+    ],
     isActive: false,
   },
   {
-    name: "2d_2pm",
-    label: "2D 2PM",
-    drawTime: "",
-    cutoffTime: "",
+    title: "Petsada",
+    key: "2d_petsada_prize",
+    fields: [
+      {
+        label: "2D Straight - Prize per 10 pesos",
+        key: "2d_petsada_prize_per_ten_straight",
+        value: "",
+      },
+      {
+        label: "2D Ramble - Prize per 10 pesos",
+        key: "2d_petsada_prize_per_ten_ramble",
+        value: "",
+      },
+    ],
     isActive: false,
   },
   {
-    name: "2d_5pm",
-    label: "2D 5PM",
-    drawTime: "",
-    cutoffTime: "",
-    isActive: false,
-  },
-  {
-    name: "2d_9pm",
-    label: "2D 9PM",
-    drawTime: "",
-    cutoffTime: "",
-    isActive: false,
-  },
-  {
-    name: "3d_2pm",
-    label: "3D 2PM",
-    drawTime: "",
-    cutoffTime: "",
-    isActive: false,
-  },
-  {
-    name: "3d_5pm",
-    label: "3D 5PM",
-    drawTime: "",
-    cutoffTime: "",
-    isActive: false,
-  },
-  {
-    name: "3d_9pm",
-    label: "3D 9PM",
-    drawTime: "",
-    cutoffTime: "",
+    title: "Pompyang",
+    key: "2d_pompyang",
+    fields: [
+      {
+        label: "2D - Prize per 10 pesos",
+        key: "2d_pompyang_prize_per_ten",
+        value: "",
+      },
+    ],
     isActive: false,
   },
 ];

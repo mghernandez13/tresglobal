@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 export interface LottoFormData {
   gameType: string;
   drawTime: string;
+  cutoffTime?: string;
   name: string;
   daysActive: string[];
   isActive: boolean;
@@ -86,7 +87,7 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
       if (data?.publicUrl) {
         onLogoChange(data.publicUrl);
       }
-    } catch (err) {
+    } catch {
       setErrorMsg("Error uploading image");
     } finally {
       setUploading(false);
@@ -139,7 +140,7 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col md:flex-row md:flex-wrap gap-6">
         <div className="flex w-full">
@@ -229,6 +230,18 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
             </div>
           </div>
           <div className="flex flex-col gap-2 w-full md:w-1/2">
+            <Label>Name</Label>
+            <Input
+              name="name"
+              value={formData.name}
+              onChange={onChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="flex w-full gap-4">
+          <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Draw Time</Label>
             <div className="relative">
               <select
@@ -251,18 +264,32 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
               </div>
             </div>
           </div>
+          <div className="flex flex-col gap-2 w-full md:w-1/2">
+            <Label>Cutoff Time</Label>
+            <div className="relative">
+              <select
+                name="cutoffTime"
+                value={formData.cutoffTime}
+                onChange={onChange}
+                className="bg-[#16191d] border border-gray-600 text-white w-full p-2 rounded-md focus:ring-2 focus:ring-yellow-500 outline-none appearance-none cursor-pointer"
+              >
+                <option value="" disabled>
+                  Select time
+                </option>
+                {times.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                <ChevronDown />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex w-full gap-4">
-          <div className="flex flex-col gap-2 w-full md:w-1/2">
-            <Label>Name</Label>
-            <Input
-              name="name"
-              value={formData.name}
-              onChange={onChange}
-              required
-            />
-          </div>
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Digits</Label>
             <Input
@@ -283,7 +310,7 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
             <Input
               type="text"
               name="minNumber"
-              value={formData.minNumber !== 0 ? formData.minNumber : ""}
+              value={formData.minNumber}
               onChange={onChange}
               required
             />
@@ -293,7 +320,7 @@ const LottoTypeForm: React.FC<LottoTypeFormProps> = ({
             <Input
               type="text"
               name="maxNumber"
-              value={formData.maxNumber !== 0 ? formData.maxNumber : ""}
+              value={formData.maxNumber}
               onChange={onChange}
               required
             />

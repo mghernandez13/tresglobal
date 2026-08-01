@@ -1,13 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Label from "../generic/Label";
 import Input from "../generic/Input";
 import SearchableSelect from "../generic/SelectWithSearch";
 import { formatTo12h } from "../../utils/helper";
 import PrimaryButton from "../generic/buttons/Primary";
 import SecondaryButton from "../generic/buttons/Secondary";
+import { useLazyQuery } from "@apollo/client/react";
+import type {
+  BetTypesQueryData,
+  BetTypesQueryVariables,
+} from "../../types/api";
+import { GET_BET_TYPES } from "../../graphql/queries/betTypes";
 
 export interface BetPrizeFormData {
   lottoTypeId: string;
+  betTypeId: string;
   betAmount: string;
   prize: string;
   isActive: boolean;
@@ -42,44 +49,77 @@ const BetPrizeForm: React.FC<BetPrizeFormProps> = ({
   onCancel,
 }) => {
   const selectedType = lottoTypes.find((lt) => lt.id === formData.lottoTypeId);
+  const gameType = selectedType?.gameType;
+
+  const [fetchBetTypes, { data: betTypesData }] = useLazyQuery<
+    BetTypesQueryData,
+    BetTypesQueryVariables
+  >(GET_BET_TYPES, {
+    fetchPolicy: "network-only",
+  });
+
+  useEffect(() => {
+    if (gameType) {
+      fetchBetTypes({
+        variables: {
+          first: 500,
+          offset: 0,
+          filter: {
+            and: [
+              { game_type: { eq: gameType } },
+              { is_archive: { eq: false } },
+            ],
+          },
+          sortOrder: [{ name: "AscNullsFirst" }],
+        },
+      });
+    }
+  }, [fetchBetTypes, gameType, selectedType]);
+
+  const betTypes =
+    betTypesData?.bet_typesCollection?.edges
+      ?.map((e) => ({
+        id: e.node?.id ?? "",
+        name: e.node?.name ?? "",
+      }))
+      .filter((item) => item.id !== "") ?? [];
 
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-[#1f2937] p-8 rounded-lg border border-gray-700 shadow-2xl"
+      className="bg-black p-8 rounded-lg border border-gray-700 shadow-2xl"
     >
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2 w-full md:w-1/2">
-          <Label>Lotto Type</Label>
-          <SearchableSelect
-            name="lottoTypeId"
-            data={lottoTypes.map((type) => ({
-              id: type.id,
-              label: type.name,
-              level: 0,
-            }))}
-            preSelectedOption={
-              lottoTypes
-                .map((type) => ({
-                  id: type.id,
-                  label: type.name,
-                  level: 0,
-                }))
-                .find((option) => option.id === formData.lottoTypeId) ?? null
-            }
-            handleFormChange={(option) =>
-              onChange({
-                target: {
-                  name: "lottoTypeId",
-                  value: option.id,
-                  type: "select",
-                },
-              } as unknown as React.ChangeEvent<HTMLInputElement>)
-            }
-          />
-        </div>
-
         <div className="flex w-full gap-4">
+          <div className="flex flex-col gap-2 w-full md:w-1/2">
+            <Label>Lotto Type</Label>
+            <SearchableSelect
+              name="lottoTypeId"
+              data={lottoTypes.map((type) => ({
+                id: type.id,
+                label: type.name,
+                level: 0,
+              }))}
+              preSelectedOption={
+                lottoTypes
+                  .map((type) => ({
+                    id: type.id,
+                    label: type.name,
+                    level: 0,
+                  }))
+                  .find((option) => option.id === formData.lottoTypeId) ?? null
+              }
+              handleFormChange={(option) =>
+                onChange({
+                  target: {
+                    name: "lottoTypeId",
+                    value: option.id,
+                    type: "select",
+                  },
+                } as unknown as React.ChangeEvent<HTMLInputElement>)
+              }
+            />
+          </div>
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Game Type</Label>
             <Input
@@ -89,6 +129,9 @@ const BetPrizeForm: React.FC<BetPrizeFormProps> = ({
               readOnly
             />
           </div>
+        </div>
+
+        <div className="flex w-full gap-4">
           <div className="flex flex-col gap-2 w-full md:w-1/2">
             <Label>Draw Time</Label>
             <Input
@@ -100,6 +143,37 @@ const BetPrizeForm: React.FC<BetPrizeFormProps> = ({
               readOnly
             />
           </div>
+          {gameType !== "LP3" && (
+            <div className="flex flex-col gap-2 w-full md:w-1/2">
+              <Label>Bet Type</Label>
+              <SearchableSelect
+                name="betTypeId"
+                data={betTypes.map((type) => ({
+                  id: type.id,
+                  label: type.name,
+                  level: 0,
+                }))}
+                preSelectedOption={
+                  betTypes
+                    .map((type) => ({
+                      id: type.id,
+                      label: type.name,
+                      level: 0,
+                    }))
+                    .find((option) => option.id === formData.betTypeId) ?? null
+                }
+                handleFormChange={(option) =>
+                  onChange({
+                    target: {
+                      name: "betTypeId",
+                      value: option.id,
+                      type: "select",
+                    },
+                  } as unknown as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex w-full gap-4">

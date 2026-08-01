@@ -39,6 +39,7 @@ const ViewBetTypeModal: React.FC<ViewBetTypeModalProps> = ({
   useEffect(() => {
     const node = data?.bet_typesCollection?.edges?.[0]?.node;
     if (node) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         gameType: String(node.game_type || ""),
         drawTime: node.draw_time ? formatTo12h(node.draw_time) : "",
@@ -71,7 +72,7 @@ const ViewBetTypeModal: React.FC<ViewBetTypeModalProps> = ({
               damping: 25,
               mass: 0.8,
             }}
-            className="relative bg-[#1f2937] border border-gray-700 w-full max-w-md p-8 rounded-lg shadow-2xl z-[70]"
+            className="relative bg-black border border-gray-700 w-full max-w-md p-8 rounded-lg shadow-2xl z-[70]"
           >
             <button
               onClick={onClose}
@@ -96,7 +97,7 @@ const ViewBetTypeModal: React.FC<ViewBetTypeModalProps> = ({
                 />
               </div>
 
-              <div className="flex flex-col gap-2 w-full">
+              {/* <div className="flex flex-col gap-2 w-full">
                 <Label>Draw Time</Label>
                 <Input
                   type="text"
@@ -105,7 +106,7 @@ const ViewBetTypeModal: React.FC<ViewBetTypeModalProps> = ({
                   value={formData.drawTime}
                   required
                 />
-              </div>
+              </div> */}
 
               <div className="flex flex-col gap-2 w-full">
                 <Label>Name</Label>
@@ -134,8 +135,8 @@ const ViewBetTypeModal: React.FC<ViewBetTypeModalProps> = ({
                 <span className="text-white">
                   {formData.isActive ? (
                     <div className="flex items-center">
-                      <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-green-500" />
+                      <div className="w-5 h-5 rounded-full border-2 border-yellow-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-yellow-500" />
                       </div>
                     </div>
                   ) : (

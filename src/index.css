@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -19,7 +19,7 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #c5f02b;
   text-decoration: inherit;
 }
 a:hover {
@@ -50,9 +50,39 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.themed-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #111827;
+}
+
+.themed-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-track {
+  background: #111827;
+  border-radius: 9999px;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 9999px;
+  border: 2px solid #111827;
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 .swal2-modal {
-  background-color: #1f2937 !important;
+  background-color: #222222 !important;
   color: white;
+}
+
+button.swal2-confirm {
+  background-color: rgb(202 138 4) !important;
+  color: white !important;
 }
 
 @media (prefers-color-scheme: light) {

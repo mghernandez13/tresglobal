@@ -8,6 +8,8 @@ import { ArrowLeft } from "lucide-react";
 import Headline from "../../components/generic/Headline";
 import { CREATE_DRAW_RESULTS_LOG } from "../../graphql/queries/resultsLogs";
 import { UserAuth } from "../../components/context/AuthContext";
+import BackButton from "../../components/generic/buttons/BackButton";
+import { supabase } from "../../db/supabase";
 
 // Types for createResult mutation
 export interface CreateResultVariables {
@@ -45,6 +47,39 @@ const CreateResultPage: React.FC = () => {
     refresh?: boolean;
   }) => {
     try {
+      const { data: existingResults, error: existingResultsError } =
+        await supabase
+          .from("draw_results")
+          .select("id, draw_type, draw_date, lotto_types(name)")
+          .eq("is_archive", false)
+          .eq("draw_type", values.draw_type)
+          .eq("draw_date", values.draw_date)
+          .limit(1);
+
+      if (existingResultsError) {
+        throw existingResultsError;
+      }
+
+      const existingResult = existingResults?.[0];
+
+      if (existingResult) {
+        const lottoTypesRelation = existingResult.lotto_types as
+          | { name?: string }
+          | { name?: string }[]
+          | null;
+        const lottoTypeName =
+          (Array.isArray(lottoTypesRelation)
+            ? lottoTypesRelation[0]?.name
+            : lottoTypesRelation?.name) ?? "this draw type";
+
+        Swal.fire({
+          icon: "error",
+          title: "Result Already Generated",
+          text: `There is already a generated result for ${lottoTypeName} for today.`,
+        });
+        return;
+      }
+
       // Convert draw_type to number for type safety
       const variables: CreateResultVariables = {
         ...values,
@@ -87,17 +122,19 @@ const CreateResultPage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-6">
         <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Create Result</Headline>
         </div>
         <ResultForm
           onSubmit={handleSubmit}
           onCancel={() => navigate("/results")}
+          initialValues={{
+            draw_date: "",
+            draw_type: "",
+            combination: "",
+          }}
         />
       </div>
     </AdminTemplate>

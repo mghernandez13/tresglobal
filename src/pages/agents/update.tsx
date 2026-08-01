@@ -14,6 +14,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import type { GetUserQueryVariables, UsersQueryData } from "../../types/api";
 import type { AgentFormDataProps } from "../../types/generic";
 import { useCheckUserPermissions } from "../../hooks/useCheckUserPermission";
+import BackButton from "../../components/generic/buttons/BackButton";
 
 const UpdateAgentPage: React.FC = () => {
   useCheckUserPermissions("Edit Agents");
@@ -46,6 +47,7 @@ const UpdateAgentPage: React.FC = () => {
     permissionId: null,
     avatarUrl: "",
     isQuotaBased: false,
+    remittancePercent: null,
     isActive: true,
     upline: null,
   });
@@ -61,6 +63,8 @@ const UpdateAgentPage: React.FC = () => {
       isQuotaBased: Boolean(
         data?.profilesCollection.edges[0].node.is_quota_based,
       ),
+      remittancePercent:
+        data?.profilesCollection.edges[0].node.remittance_percent ?? null,
       isActive: Boolean(data?.profilesCollection.edges[0].node.status),
       ...(data?.profilesCollection.edges[0].node.upline !== null && {
         upline: String(data?.profilesCollection.edges[0].node.upline),
@@ -90,6 +94,7 @@ const UpdateAgentPage: React.FC = () => {
         variables: {
           id: userId,
           ...formData,
+          remittancePercent: Number(formData.remittancePercent),
         },
       });
 
@@ -125,12 +130,9 @@ const UpdateAgentPage: React.FC = () => {
     <AdminTemplate>
       <div className="flex-col w-full px-4 sm:mx-2 md:mx-10 py-4">
         <div className="flex items-center gap-4 mb-5">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400"
-          >
+          <BackButton onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </BackButton>
           <Headline>Update Agent</Headline>
         </div>
         <AgentForm

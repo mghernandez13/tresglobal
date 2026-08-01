@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
@@ -52,6 +53,7 @@ Deno.serve(async (req) => {
       permissionId,
       avatarUrl,
       isQuotaBased,
+      remittancePercent,
       upline,
       isActive,
     } = await req.json();
@@ -79,10 +81,11 @@ Deno.serve(async (req) => {
         password,
         email_confirm: true,
         user_metadata: {
-          first_name: firstName,
-          last_name: lastName,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
           permission_id: permissionId,
           is_quota_based: isQuotaBased,
+          remittance_percent: remittancePercent,
           avatar_url: avatarUrl,
           upline: upline,
           permissions: permissionsArray,
@@ -97,10 +100,15 @@ Deno.serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  } catch (error: unknown) {
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

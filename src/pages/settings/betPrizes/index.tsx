@@ -3,11 +3,7 @@ import Swal from "sweetalert2";
 import Headline from "../../../components/generic/Headline";
 import AdminTemplate from "../../../templates/AdminTemplate";
 import DataTable from "../../../components/generic/table";
-import { useQuery } from "@apollo/client/react";
-import {
-  GET_BET_PRIZES,
-  UPDATE_BET_PRIZE,
-} from "../../../graphql/queries/betPrizes";
+import { UPDATE_BET_PRIZE } from "../../../graphql/queries/betPrizes";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -21,20 +17,41 @@ import {
   Trash2,
 } from "lucide-react";
 import type { SortDirection } from "../../../types/constants";
-import type {
-  BetPrizesQueryData,
-  BetPrizesQueryVariables,
-  LottoQueryData,
-  LottoQueryVariables,
-  UpdateBetPrizeMutation,
-} from "../../../types/api";
+import type { UpdateBetPrizeMutation } from "../../../types/api";
 import { formatTo12h } from "../../../utils/helper";
-import { GET_LOTTO_TYPES } from "../../../graphql/queries/lotto";
 import ViewBetPrizeModal from "../../../components/modals/betPrizes/ViewBetPrizeModal";
 import UpdateBetPrizeModal from "../../../components/modals/betPrizes/UpdateBetPrizeModal";
 import { formatCurrency } from "../../../utils/currency";
 import PrimaryButton from "../../../components/generic/buttons/Primary";
 import { useCheckUserPermissions } from "../../../hooks/useCheckUserPermission";
+import IconTableActionButton from "../../../components/generic/buttons/IconTableActionButton";
+import { supabase } from "../../../db/supabase";
+import type {
+  BetPrizeListItem,
+  BetPrizeSupabaseRow,
+  TableError,
+} from "../../../types/bets";
+import {
+  matchesBetPrizeSearch,
+  normalizeBetPrizeRows,
+  sortBetPrizes,
+} from "../../../utils/bets";
+
+const renderSortIcon = (
+  activeColumn: string,
+  currentColumn: string,
+  direction: SortDirection,
+) => {
+  if (activeColumn === currentColumn) {
+    return direction === "AscNullsFirst" ? (
+      <ChevronUp className="absolute right-2 top-4 w-4 h-4" />
+    ) : (
+      <ChevronDown className="absolute right-2 top-4 w-4 h-4" />
+    );
+  }
+
+  return <ChevronsUpDown className="absolute right-2 top-4 w-4 h-4" />;
+};
 
 const BetPrizesPage: React.FC = () => {
   useCheckUserPermissions("View Bet Prizes");
@@ -51,126 +68,117 @@ const BetPrizesPage: React.FC = () => {
     column: "created_at",
     direction: "DescNullsLast",
   });
-  const [orderBy, setOrderBy] = useState<Record<string, string>[]>([]);
   const [pageSize, setPageSize] = useState<number>(10);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedPrize, setSelectedPrize] = useState<
-    BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"] | null
-  >(null);
+  const [selectedPrize, setSelectedPrize] = useState<BetPrizeListItem | null>(
+    null,
+  );
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
-  const [updatePrize, setUpdatePrize] = useState<
-    BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"] | null
-  >(null);
+  const [updatePrize, setUpdatePrize] = useState<BetPrizeListItem | null>(null);
   const [selectedGameTypes, setSelectedGameTypes] = useState<string[]>([]);
+  const [betPrizes, setBetPrizes] = useState<BetPrizeListItem[]>([]);
+  const [allBetPrizes, setAllBetPrizes] = useState<BetPrizeListItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<TableError | null>(null);
   const offset = (currentPage - 1) * pageSize;
 
-  // Static game type filter: only 2D, 3D, LP3, counts from all lotto types (unfiltered)
-  const allLottoTypes = useQuery<LottoQueryData, LottoQueryVariables>(
-    GET_LOTTO_TYPES,
-    {
-      variables: {
-        first: 1000, // large enough to get all
-        offset: 0,
-        filter: { is_archive: { eq: false } },
-        sortOrder: [{ name: "AscNullsFirst" }],
-      },
-      fetchPolicy: "network-only",
-    },
-  );
+  const fetchBetPrizes = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  const searchTerm = useMemo(() => {
-    return searchQuery ? `%${searchQuery}%` : "%";
-  }, [searchQuery]);
+    let query = supabase
+      .from("bet_prizes")
+      .select(
+        `
+          id,
+          lotto_types!inner(id, game_type, draw_time, name),
+          bet_types(id, name),
+          bet_amount,
+          prize,
+          is_active,
+          super_jackpot,
+          super_jackpot_multiplier
+        `,
+        { count: "exact" },
+      )
+      .eq("is_archive", false);
 
-  // Query lotto types for search
-  const { data: lottoData } = useQuery<LottoQueryData, LottoQueryVariables>(
-    GET_LOTTO_TYPES,
-    {
-      variables: {
-        first: 100,
-        offset: 0,
-        searchTerm,
-        filter: {
-          and: [
-            {
-              or: [
-                { game_type: { ilike: searchTerm } },
-                { name: { ilike: searchTerm } },
-              ],
-            },
-            { is_archive: { eq: false } },
-          ],
-        },
-        sortOrder: [{ name: "AscNullsFirst" }],
-      },
-      notifyOnNetworkStatusChange: true,
-      fetchPolicy: "network-only",
-    },
-  );
-
-  const lottoTypeIds = useMemo(() => {
-    if (!searchQuery) return undefined;
-    return (
-      lottoData?.lotto_typesCollection?.edges
-        ?.map((e) => e.node?.id)
-        .filter(Boolean) ?? []
-    );
-  }, [lottoData, searchQuery]);
-
-  const betPrizesFilter = useMemo(() => {
-    const and: unknown[] = [{ is_archive: { eq: false } }];
-
-    // If game type filter is selected, filter by lotto_type_ids matching those game types
     if (selectedGameTypes.length > 0) {
-      // Find lotto_type_ids for selected game types from allLottoTypes
-      const lottoTypeIdsForGameTypes =
-        allLottoTypes.data?.lotto_typesCollection?.edges
-          ?.filter(({ node }) => selectedGameTypes.includes(node.game_type))
-          .map(({ node }) => node.id) ?? [];
-      and.unshift({ lotto_type_id: { in: lottoTypeIdsForGameTypes } });
-    } else if (searchQuery) {
-      and.unshift({ lotto_type_id: { in: lottoTypeIds ?? [] } });
+      query = query.in("lotto_types.game_type", selectedGameTypes);
     }
 
-    return { and };
-  }, [selectedGameTypes, allLottoTypes.data, lottoTypeIds, searchQuery]);
+    const { data, error: listError } = await query;
+
+    if (listError) {
+      setBetPrizes([]);
+      setTotalCount(0);
+      setHasNextPage(false);
+      setError({ name: "SupabaseError", message: listError.message });
+      setLoading(false);
+      return;
+    }
+
+    const rows = normalizeBetPrizeRows((data ?? []) as BetPrizeSupabaseRow[]);
+    const searchedRows = rows.filter((prize) =>
+      matchesBetPrizeSearch(prize, searchQuery),
+    );
+    const ascending = sortConfig.direction === "AscNullsFirst";
+    const sortedRows = sortBetPrizes(
+      searchedRows,
+      sortConfig.column,
+      ascending,
+    );
+    const paginatedRows = sortedRows.slice(offset, offset + pageSize);
+
+    setBetPrizes(paginatedRows);
+    setTotalCount(sortedRows.length);
+    setHasNextPage(offset + paginatedRows.length < sortedRows.length);
+    setLoading(false);
+  }, [
+    offset,
+    pageSize,
+    searchQuery,
+    selectedGameTypes,
+    sortConfig.column,
+    sortConfig.direction,
+  ]);
+
+  const fetchAllBetPrizes = useCallback(async () => {
+    const { data } = await supabase
+      .from("bet_prizes")
+      .select(
+        `
+          id,
+          lotto_types!inner(id, game_type, draw_time, name),
+          bet_types(id, name),
+          bet_amount,
+          prize,
+          is_active,
+          super_jackpot,
+          super_jackpot_multiplier
+        `,
+      )
+      .eq("is_archive", false);
+
+    setAllBetPrizes(
+      normalizeBetPrizeRows((data ?? []) as BetPrizeSupabaseRow[]),
+    );
+  }, []);
 
   const [updateBetPrize, { loading: updateBetPrizeLoading }] =
     useMutation<UpdateBetPrizeMutation>(UPDATE_BET_PRIZE, {
-      refetchQueries: [
-        {
-          query: GET_BET_PRIZES,
-          variables: {
-            first: pageSize,
-            offset,
-            orderBy,
-            filter: betPrizesFilter,
-          },
-        },
-      ],
+      awaitRefetchQueries: false,
     });
 
-  const { data, loading, error } = useQuery<
-    BetPrizesQueryData,
-    BetPrizesQueryVariables
-  >(GET_BET_PRIZES, {
-    variables: {
-      first: pageSize,
-      offset,
-      orderBy,
-      filter: betPrizesFilter,
-    },
-    notifyOnNetworkStatusChange: true,
-    fetchPolicy: "network-only",
-  });
+  useEffect(() => {
+    void fetchBetPrizes();
+  }, [fetchBetPrizes]);
 
-  const { data: allBetPrizesData } = useQuery<BetPrizesQueryData>(
-    GET_BET_PRIZES,
-    {
-      notifyOnNetworkStatusChange: true,
-      fetchPolicy: "network-only",
-    },
-  );
+  useEffect(() => {
+    void fetchAllBetPrizes();
+  }, [fetchAllBetPrizes]);
 
   // Game type filter counts based on lotto types actually referenced by bet prizes
   const gameTypeOptions = useMemo(() => {
@@ -179,9 +187,9 @@ const BetPrizesPage: React.FC = () => {
       "3D": new Set(),
       LP3: new Set(),
     };
-    allBetPrizesData?.bet_prizesCollection?.edges.forEach(({ node }) => {
-      const gt = node.lotto_types?.game_type;
-      const ltId = node.lotto_types?.id;
+    allBetPrizes.forEach((prize) => {
+      const gt = prize.lotto_types?.game_type;
+      const ltId = prize.lotto_types?.id;
       if (gt && ltId && counts[gt] !== undefined) {
         counts[gt].add(String(ltId));
       }
@@ -191,7 +199,7 @@ const BetPrizesPage: React.FC = () => {
       { name: "3D", value: "3D", count: counts["3D"].size },
       { name: "LP3", value: "LP3", count: counts["LP3"].size },
     ];
-  }, [allBetPrizesData]);
+  }, [allBetPrizes]);
 
   const tableFilter = {
     gameType: {
@@ -220,7 +228,7 @@ const BetPrizesPage: React.FC = () => {
     (selectedIndexes: number[], resetSelectedRows: () => void) => {
       const selectedIds = selectedIndexes
         .map((index) => {
-          const prize = data?.bet_prizesCollection?.edges?.[index]?.node;
+          const prize = betPrizes[index];
           return prize?.id;
         })
         .filter(Boolean);
@@ -239,6 +247,8 @@ const BetPrizesPage: React.FC = () => {
                 updateBetPrize({ variables: { id, isArchive: true } }),
               ),
             );
+            await fetchBetPrizes();
+            await fetchAllBetPrizes();
             Swal.fire({
               icon: "success",
               title: "Delete Bet Prizes",
@@ -255,7 +265,7 @@ const BetPrizesPage: React.FC = () => {
         }
       });
     },
-    [updateBetPrize, data],
+    [betPrizes, fetchAllBetPrizes, fetchBetPrizes, updateBetPrize],
   );
 
   const handleDeletePrize = useCallback(
@@ -270,6 +280,8 @@ const BetPrizesPage: React.FC = () => {
         if (result.isConfirmed) {
           try {
             await updateBetPrize({ variables: { id, isArchive: true } });
+            await fetchBetPrizes();
+            await fetchAllBetPrizes();
             Swal.fire({
               icon: "success",
               title: "Delete Bet Prize",
@@ -285,18 +297,14 @@ const BetPrizesPage: React.FC = () => {
         }
       });
     },
-    [updateBetPrize],
+    [fetchAllBetPrizes, fetchBetPrizes, updateBetPrize],
   );
 
-  const handleViewPrize = (
-    prize: BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"],
-  ) => {
+  const handleViewPrize = (prize: BetPrizeListItem) => {
     setSelectedPrize(prize);
     setViewModalOpen(true);
   };
-  const handleOpenUpdateModal = (
-    prize: BetPrizesQueryData["bet_prizesCollection"]["edges"][0]["node"],
-  ) => {
+  const handleOpenUpdateModal = (prize: BetPrizeListItem) => {
     setUpdatePrize(prize);
     setUpdateModalOpen(true);
   };
@@ -307,6 +315,7 @@ const BetPrizesPage: React.FC = () => {
     is_active: boolean;
     super_jackpot?: boolean;
     super_jackpot_multiplier?: number | "";
+    betTypeId: string;
   }) => {
     if (!updatePrize) return;
     try {
@@ -316,6 +325,7 @@ const BetPrizesPage: React.FC = () => {
           betAmount: fields.bet_amount,
           prize: fields.prize,
           isActive: fields.is_active,
+          betTypeId: fields.betTypeId !== "" ? fields.betTypeId : null,
           superJackpot: fields.super_jackpot,
           superJackpotMultiplier: fields.super_jackpot_multiplier
             ? Number(fields.super_jackpot_multiplier)
@@ -334,6 +344,8 @@ const BetPrizesPage: React.FC = () => {
         title: "Update Bet Prize",
         text: "Bet prize successfully updated!",
       });
+      await fetchBetPrizes();
+      await fetchAllBetPrizes();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -355,6 +367,23 @@ const BetPrizesPage: React.FC = () => {
             className="relative px-4 py-3 cursor-pointer"
           >
             Game Type
+            {renderSortIcon(
+              sortConfig.column,
+              "game_type",
+              sortConfig.direction,
+            )}
+          </th>
+          <th
+            scope="col"
+            onClick={() => handleSort("bet_type_name")}
+            className="relative px-4 py-3 cursor-pointer"
+          >
+            Bet Type
+            {renderSortIcon(
+              sortConfig.column,
+              "bet_type_name",
+              sortConfig.direction,
+            )}
           </th>
           <th
             scope="col"
@@ -362,6 +391,11 @@ const BetPrizesPage: React.FC = () => {
             className="relative px-4 py-3 cursor-pointer"
           >
             Draw Time
+            {renderSortIcon(
+              sortConfig.column,
+              "draw_time",
+              sortConfig.direction,
+            )}
           </th>
           <th
             scope="col"
@@ -369,6 +403,7 @@ const BetPrizesPage: React.FC = () => {
             className="relative px-4 py-3 cursor-pointer"
           >
             Draw Name
+            {renderSortIcon(sortConfig.column, "name", sortConfig.direction)}
           </th>
           <th
             scope="col"
@@ -412,18 +447,18 @@ const BetPrizesPage: React.FC = () => {
 
   const tableData = useMemo(() => {
     return (
-      data?.bet_prizesCollection?.edges?.map((item) => {
-        const prize = item.node;
+      betPrizes.map((prize) => {
         return {
           gameType: prize.lotto_types.game_type,
+          betType: prize.bet_types?.name ?? "-",
           drawTime: formatTo12h(prize.lotto_types.draw_time),
           drawName: prize.lotto_types.name,
           betAmount: formatCurrency(prize.bet_amount),
           prize: formatCurrency(prize.prize),
           active: prize.is_active ? (
             <div className="flex items-center">
-              <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                <Check className="w-3 h-3 text-green-500" />
+              <div className="w-5 h-5 rounded-full border-2 border-yellow-500 flex items-center justify-center">
+                <Check className="w-3 h-3 text-yellow-500" />
               </div>
             </div>
           ) : (
@@ -436,13 +471,12 @@ const BetPrizesPage: React.FC = () => {
           action: (
             <td className="flex gap-2 px-4 py-3 items-center justify-end">
               <div className="relative flex flex-col items-center group">
-                <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                <IconTableActionButton
                   type="button"
                   onClick={() => handleViewPrize(prize)}
                 >
                   <Eye className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     View
@@ -451,13 +485,12 @@ const BetPrizesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                <IconTableActionButton
                   type="button"
                   onClick={() => handleOpenUpdateModal(prize)}
                 >
                   <SquarePen className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Edit
@@ -466,13 +499,12 @@ const BetPrizesPage: React.FC = () => {
                 </div>
               </div>
               <div className="relative flex flex-col items-center group">
-                <button
-                  className="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                <IconTableActionButton
                   type="button"
                   onClick={() => handleDeletePrize(prize.id)}
                 >
                   <Trash2 className="w-5 h-5" />
-                </button>
+                </IconTableActionButton>
                 <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center">
                   <span className="relative z-10 p-2 text-xs leading-none text-white whitespace-no-wrap bg-gray-900 shadow-lg rounded-md">
                     Delete
@@ -485,14 +517,7 @@ const BetPrizesPage: React.FC = () => {
         };
       }) ?? []
     );
-  }, [data?.bet_prizesCollection?.edges, handleDeletePrize]);
-
-  const totalCount = data?.bet_prizesCollection?.totalCount ?? 0;
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOrderBy([{ [sortConfig.column]: sortConfig.direction }]);
-  }, [sortConfig]);
+  }, [betPrizes, handleDeletePrize]);
 
   return (
     <AdminTemplate>
@@ -505,7 +530,7 @@ const BetPrizesPage: React.FC = () => {
         </div>
         <DataTable
           loading={loading || updateBetPrizeLoading}
-          error={error}
+          error={error ?? undefined}
           tableName="Bet Prize"
           columns={columns}
           data={tableData}
@@ -516,9 +541,7 @@ const BetPrizesPage: React.FC = () => {
           }}
           searchParams={searchParams}
           setSearchParams={setSearchParams}
-          hasNextPage={
-            data?.bet_prizesCollection?.pageInfo?.hasNextPage ?? false
-          }
+          hasNextPage={hasNextPage}
           pageSize={pageSize}
           setPageSize={setPageSize}
           onDeleteSelected={handleBulkDelete}
